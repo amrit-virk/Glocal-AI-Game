@@ -40,11 +40,10 @@ const gameActions = {
   bias: "Repair a plan",
 };
 
-const gameEmoji = { claim: "🕵️", privacy: "🛡️", bias: "🧩" };
 const previews = {
-  claim: `<div class="game-cover cover-claim"><span class="cover-emoji">🕵️</span><span class="cover-bubble">Does that check out? 🔎</span></div>`,
-  privacy: `<div class="game-cover cover-privacy"><span class="cover-emoji">🛡️</span><span class="cover-bubble">Think before you send 👀</span></div>`,
-  bias: `<div class="game-cover cover-bias"><span class="cover-emoji">🧩</span><span class="cover-bubble">Who’s missing? 💭</span></div>`,
+  claim: `<div class="game-cover"><div class="preview-source"><span>AI claim</span><strong>Check the original.</strong><div class="preview-lines"><i></i><i></i><i></i></div></div></div>`,
+  privacy: `<div class="game-cover"><div class="preview-source"><span>Prompt draft</span><p>Invite the whole club.<br><del>Include the contact list.</del></p></div></div>`,
+  bias: `<div class="game-cover"><div class="preview-source"><span>Repair the plan</span><div class="preview-slot">Change the venue</div><div class="preview-slot">Add another shift</div></div></div>`,
 };
 
 function streakPanel() {
@@ -75,16 +74,14 @@ function home() {
   paint(`
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">A little practice. A sharper instinct.</p>
-        <h1>Use AI with<br>better judgment.<span aria-hidden="true"> 🔥</span></h1>
+                <h1>Use AI with<br>better judgment.</h1>
         <p>Spot the bad take. Fix the risky prompt. Make the better call.</p>
         <a class="button" href="#choose" data-jump>Choose a game <span aria-hidden="true">↓</span></a>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="chat-stack">
-          <div class="hero-chat chat-ai"><span class="chat-avatar">🤖</span><div><strong>AI says…</strong><p>Looks good. Ready to share?</p></div></div>
-          <div class="hero-chat chat-player"><span class="chat-avatar">👀</span><div><strong>You</strong><p>Wait. Let me check that.</p></div></div>
-          <div class="hero-reaction">🧠 <span>Your move.</span> ⚡</div>
+          <div class="hero-chat chat-ai"><div><strong>AI says…</strong><p>Looks good. Ready to share?</p></div></div>
+          <div class="hero-chat chat-player"><div><strong>You</strong><p>Wait. Let me check that.</p></div></div>
         </div>
       </div>
     </section>
@@ -186,7 +183,7 @@ function promptFeedback(p: Privacy) {
   if (!promptReview) return `<h2>Before you submit</h2><p>Check your rewrite for details that identify someone and for instructions the task still needs. You have one submission.</p>`;
   const { exposed, missing, solved } = promptReview;
   const removed = inspectPrompt(p, p.original).exposed.filter((detail) => !exposed.includes(detail));
-  return `<span class="feedback-emoji" aria-hidden="true">${solved ? "🙌" : "💡"}</span><h2 id="rewrite-result" tabindex="-1">${solved ? "Case solved" : "Review your rewrite"}</h2>
+  return `<h2 id="rewrite-result" tabindex="-1">${solved ? "Case solved" : "Review your rewrite"}</h2>
     ${removed.length ? `<h3>Private details removed</h3><ul>${removed.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>` : ""}
     ${exposed.length ? `<h3>What the AI would still receive</h3><p>These details can identify someone or expose information the tool doesn’t need.</p><ul>${exposed.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>` : "<p>No known private details found in this case.</p>"}
     ${missing.length ? `<h3>Keep the task clear</h3><p>Restore these instructions so the rewritten prompt still does the job.</p><ul>${missing.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>` : "<p>The rewrite keeps the task requirements.</p>"}
@@ -213,10 +210,10 @@ function scenario(preserveFocus?: string) {
   view = "play";
   const g = game!;
   const p = cases[index];
-  const aiContext = p.kind === "claim" ? `<section class="ai-context"><h2><span aria-hidden="true">🤖</span> AI answer</h2><p>${esc(p.aiAnswer)}</p></section>`
-    : p.kind === "bias" ? `<div class="ai-comparison"><section class="ai-context"><h2><span aria-hidden="true">💬</span> What the AI was told</h2><p>${esc(p.aiInput)}</p></section><section class="ai-context"><h2><span aria-hidden="true">🤖</span> What the AI recommended</h2><p>${esc(p.aiPlan)}</p></section></div>`
+  const aiContext = p.kind === "claim" ? `<section class="ai-context"><h2>AI answer</h2><p>${esc(p.aiAnswer)}</p></section>`
+    : p.kind === "bias" ? `<div class="ai-comparison"><section class="ai-context"><h2>What the AI was told</h2><p>${esc(p.aiInput)}</p></section><section class="ai-context"><h2>What the AI recommended</h2><p>${esc(p.aiPlan)}</p></section></div>`
     : "";
-  const html = `<section class="panel game ${g.id}"><div class="case-header"><div class="status"><p class="eyebrow"><span class="game-avatar" aria-hidden="true">${gameEmoji[g.id]}</span> ${g.name}</p><span class="round-status">Case ${index + 1} of ${cases.length}</span></div>
+  const html = `<section class="panel game ${g.id}"><div class="case-header"><div class="status"><p class="eyebrow">${g.name}</p><span class="round-status">Case ${index + 1} of ${cases.length}</span></div>
     <progress aria-label="Cases completed" max="${cases.length}" value="${index + Number(outcome !== "playing")}"></progress>
     <h1>${esc(p.title)}</h1><div class="situation"><p class="eyebrow">${p.kind === "claim" ? "Case brief" : "Your assignment"}</p><p>${esc(p.brief)}</p></div>${aiContext}</div>
     ${p.kind === "privacy" ? promptEditor(p) : outcome === "playing" ? board(p) : feedbackHtml(p)}</section>`;
@@ -248,7 +245,7 @@ function feedbackHtml(p: Exclude<Puzzle, Privacy>) {
       <ul>${p.people.map((person, i) => `<li><strong>${esc(person.name)}:</strong> ${coverage.has(i) ? "Can participate." : `Still faces a barrier. ${esc(person.barrier)}`}</li>`).join("")}</ul>
       ${outcome === "missed" ? `<h3>One plan that reaches everyone</h3><ul>${p.example.map((i) => `<li>${esc(p.repairs[i].text)}</li>`).join("")}</ul>` : ""}`;
   }
-  return `<section class="review-sheet ${outcome === "solved" ? "review-success" : ""}" aria-labelledby="feedback-title"><span class="feedback-emoji" aria-hidden="true">${outcome === "solved" ? "🙌" : "💡"}</span><h2 id="feedback-title">${outcome === "solved" ? "Case solved" : "Case review"}</h2>
+  return `<section class="review-sheet ${outcome === "solved" ? "review-success" : ""}" aria-labelledby="feedback-title"><h2 id="feedback-title">${outcome === "solved" ? "Case solved" : "Case review"}</h2>
     ${report}<p class="takeaway">${esc(p.lesson)}</p>
     <p>Read more: ${p.references.map((id) => `<a href="#source/${id}">${references.find((r) => r.id === id)!.publisher}</a>`).join(" · ")}</p>
     ${nextCase()}</section>`;
@@ -261,7 +258,7 @@ function results() {
     <a class="back-link" href="#">← All games</a>
     <div class="game-banner result-banner">
       <div class="banner-copy">
-        <span class="feedback-emoji" aria-hidden="true">${score === cases.length ? "🏆" : "🎮"}</span><p class="eyebrow">Run complete</p>
+        <p class="eyebrow">Run complete</p>
         <h1>${g.name}</h1>
         <p class="lead">${g.takeaway}</p>
         <div class="actions">${button("Replay game", "start")}</div>
