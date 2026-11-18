@@ -1,6 +1,6 @@
 # AI Arcade
 
-A private educational prototype for the GLOCAL National Youth AI Literacy Challenge. Three games, twelve fictional scenarios: Privacy Protector, Claim Checker and Bias Detective. No accounts, analytics, personal-data entry or live AI. Runs as a static website with no backend or runtime network dependency. Source links open publisher websites only when followed.
+A private educational prototype for the GLOCAL National Youth AI Literacy Challenge. Three games, twelve fictional scenarios: Privacy Protector, Claim Checker and Bias Detective. No accounts, analytics, personal-data entry or live AI. A first-party cookie stores the daily streak in the current browser. Runs as a static website with no backend or runtime network dependency. Source links open publisher websites only when followed.
 
 **Mentor review is pending.** See [REVIEW.md](REVIEW.md) for the original prototype review record.
 
@@ -59,3 +59,9 @@ Each run shuffles all four cases. Submit each case once, review the explanation,
 ## Review and handover
 
 See [REVIEW.md](REVIEW.md) for validation evidence and outstanding content checks, and [PR_DESCRIPTION.md](PR_DESCRIPTION.md) for a draft private pull request description. This prototype has no participant feedback or measured learning outcomes yet. No public deployment is included.
+
+## Daily streak
+
+Finishing all four cases in any game counts as one practice day, regardless of score. Repeated completions on the same local calendar day count once. Consecutive days extend the streak. Missing a day resets the current streak while keeping the best streak.
+
+The cookie stores the last completion date, current streak, and best streak for up to one year. It is scoped to this site's path. Clearing cookies or switching browsers/devices starts a separate history. Localhost and GitHub Pages have separate cookies. If cookies are blocked, the game displays a save message after completion. This browser-based feature uses the device clock and can be edited by the user.

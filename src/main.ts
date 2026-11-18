@@ -1,6 +1,7 @@
 import "./style.css";
 import { games, references, type Game, type Privacy, type Puzzle, type Verdict } from "./content";
 import { inspectPrompt, shuffleCases, testPlan } from "./engine";
+import { currentStreak, localDay, readStreak, saveCompletion } from "./streak";
 const main = document.querySelector<HTMLElement>("main")!;
 let view: "intro" | "play" | "results" = "intro";
 let game: Game | undefined,
@@ -8,6 +9,7 @@ let game: Game | undefined,
   score = 0,
   outcome: "playing" | "solved" | "missed" = "playing";
 let cases: Puzzle[] = [];
+let streakSaved = true;
 const opened = new Set<number>();
 const selected = new Set<number>();
 let pinned: number | undefined;
@@ -43,6 +45,24 @@ const previews = {
   bias: `<div class="sample sample-plan"><span class="sample-kicker">REPAIR SLOTS</span><div><span>01</span> Move the venue</div><div><span>02</span> Add another shift</div></div>`,
 };
 
+function streakPanel() {
+  const streak = readStreak();
+  const today = localDay();
+  const current = currentStreak(streak, today);
+  const doneToday = streak?.lastDay === today;
+  return `<section class="streak-panel" aria-labelledby="streak-heading">
+    <div><h2 id="streak-heading">Daily streak</h2>
+      <p>${doneToday ? "Today’s practice is complete. Come back tomorrow to keep it going."
+        : current ? "Finish any game today to keep your streak going."
+        : "Finish any game to start a streak. Each day of practice counts."}</p>
+    </div>
+    <dl><div><dt>Current</dt><dd>${current} ${current === 1 ? "day" : "days"}</dd></div>
+      <div><dt>Best</dt><dd>${streak?.best ?? 0} ${streak?.best === 1 ? "day" : "days"}</dd></div></dl>
+    <p class="streak-note">Saved in this browser with a cookie. Days follow your device’s local time.</p>
+    ${streakSaved ? "" : '<p role="status">Your browser couldn’t save this streak. Allow cookies for this site to keep it between visits.</p>'}
+  </section>`;
+}
+
 function home() {
   game = undefined;
   paint(`
@@ -66,6 +86,7 @@ function home() {
         </div>
       </div>
     </section>
+    ${streakPanel()}
     <section class="game-picker" aria-labelledby="choose">
       <div class="section-heading"><h2 id="choose" tabindex="-1">Choose a game</h2><span>4 cases each · Untimed</span></div>
       <div class="cards">${games.map((g, i) => `
@@ -98,7 +119,7 @@ function intro(g: Game) {
     <section class="how-to" aria-labelledby="how-to">
       <h2 id="how-to">How to play</h2>
       <ol class="steps" role="list">${g.instructions.map((step, i) => `<li><span aria-hidden="true" data-step="0${i + 1}"></span><p>${esc(step)}</p></li>`).join("")}</ol>
-      <p class="muted">Cases appear in random order. Each submission is final, and your score appears after the last case.</p>
+      <p class="muted">Cases appear in random order. Each submission is final, and your score appears after the last case. Finish all four cases to count today toward your streak.</p>
       <div class="actions">${button("Start game", "start")}</div>
     </section>
   </section>`);
@@ -250,6 +271,7 @@ function results() {
         <div class="score-track" aria-hidden="true">${cases.map((_, i) => `<span class="${i < score ? "scored" : ""}"></span>`).join("")}</div>
       </div>
     </div>
+    ${streakPanel()}
     <section class="other-games" aria-labelledby="another-game">
       <h2 id="another-game">Try another game</h2>
       <div class="next-games">${games.filter((other) => other.id !== g.id).map((other) => `
@@ -344,6 +366,7 @@ main.addEventListener("click", (e) => {
       : p.kind === "privacy" ? promptReview!.solved
       : testPlan(p, selected).solved;
     if (solved) score++;
+    if (index === cases.length - 1) streakSaved = saveCompletion();
     outcome = solved ? "solved" : "missed";
     scenario();
     document.getElementById("rewrite-result")?.focus();

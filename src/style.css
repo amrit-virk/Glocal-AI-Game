@@ -469,3 +469,25 @@ button:hover, .button:hover { background: #344c43; }
 @media (max-width: 660px) {
   .ai-comparison { grid-template-columns: 1fr; }
 }
+
+.streak-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 24px;
+  padding: 20px 24px;
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.streak-panel h2 { margin-bottom: 6px; }
+.streak-panel p { margin: 0; }
+.streak-panel dl { display: flex; gap: 24px; margin: 0; }
+.streak-panel dt { font-size: .8rem; color: var(--muted); }
+.streak-panel dd { margin: 0; font-size: 1.25rem; font-weight: 750; white-space: nowrap; }
+.streak-panel .streak-note { grid-column: 1 / -1; color: var(--muted); font-size: .8rem; }
+.streak-panel [role="status"] { grid-column: 1 / -1; }
+@media (max-width: 660px) {
+  .streak-panel { grid-template-columns: 1fr; padding: 16px; gap: 14px; }
+}
