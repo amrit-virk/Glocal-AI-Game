@@ -1,8 +1,8 @@
-# AI Arcade v1
+# AI Arcade
 
 A private educational prototype for the GLOCAL National Youth AI Literacy Challenge. Three games, twelve fictional scenarios: Privacy Protector, Claim Checker and Bias Detective. No accounts, analytics, personal-data entry or live AI. Runs as a static website with no backend or runtime network dependency. Source links open publisher websites only when followed.
 
-**Content verification is pending.** Reference publishers could not be reached under the cloud environment’s network policy. See [REVIEW.md](REVIEW.md) before treating the teaching content as verified or releasing it.
+**Mentor review is pending.** See [REVIEW.md](REVIEW.md) for the original prototype review record.
 
 ## Run on a Mac
 
@@ -42,18 +42,19 @@ npm run preview
 
 Open the preview address printed by Vite, normally `http://localhost:4173`. `dist/` contains the production files; keep hosting private until approved. Playwright starts and stops its own development server on port 4173, so stop preview before browser tests. Browser tests cover desktop and phone viewports in Chromium. On Linux with an installed system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`. Otherwise install Playwright Chromium as above; Linux may also require `npx playwright install-deps chromium` with appropriate system privileges.
 
-`npm test` exercises the scoring engine and content integrity. `npm run test:e2e` exercises actual inputs, all twelve scenarios, feedback, source navigation, replay reset, retries, zero-score completion, keyboard controls, layout overflow and automated axe accessibility checks. Screenshots/results are written to ignored `test-results/`. `npm run build` runs strict TypeScript checking and builds production assets.
+`npm test` checks puzzle data and rules. `npm run test:e2e` covers the three interactions, scoring, locked submissions and answer feedback, keyboard activation, and the evidence board layout and accessibility on desktop and phone viewports. `npm run build` runs strict TypeScript checking and builds production assets.
 
-If a managed cloud instance cannot write the default npm cache, use `npm ci --cache /tmp/ai-arcade-npm`. Use the existing isolated checkout; no extra Git worktree is required.
+If a managed cloud instance cannot write the default npm cache, use `npm ci --cache /tmp/ai-arcade-npm`.
 
-## Edit content
+## Gameplay and content
 
-- `src/content.ts`: games, scenarios and references. Keep scenario IDs stable. Each stage has a question, options with stable IDs and specific feedback, and an `answers` array of option IDs. `multiple: true` renders checkboxes; other stages render radio buttons. Privacy and bias games have two stages; claims have one. Each game must retain four scenarios unless UI totals and tests are deliberately updated.
-- `references` entries contain a stable ID, title, publisher, URL and supporting note. Scenario `references` must match those IDs. Record checks and unresolved questions in `REVIEW.md`.
-- `src/engine.ts`: exact-set answer checking, first-attempt points and the single practice retry.
-- `src/main.ts`: shared screen flow and UI. `src/style.css`: responsive layout, colors and focus styles.
+- **Claim Checker** has four cases. Open evidence, pin the strongest source, and decide whether to share, correct, or hold the AI answer. The review shows the consequence of your choice. The case data in `src/content.ts` defines the verdict, decisive clue, verdict rationale, clue explanations, and lesson.
+- **Privacy Protector** lets players rewrite a fictional prompt in a text editor. Each case defines its starting prompt, an example, and local rules for known private details and task requirements. The checker uses patterns and accepts multiple phrasings. The review compares what the original and the rewrite expose and identifies missing task requirements. It cannot evaluate arbitrary prompts or guarantee that a rewrite is safe.
+- **Bias Detective** gives players a limited number of repair slots. The case shows what the AI was told and what it recommended. Players can preview the effect of their current repairs for one person before submitting. Each repair lists the people it helps. A replay alternates the volunteer case with a transit remix. A plan succeeds if every person has a way to participate.
 
-Answers may change before submission, including returning from step two to step one. Both stages must be right to earn the point. A failed first attempt allows one practice retry; after that the best answers are revealed. Replay clears the score and starts at scenario one. State stays in memory only: reload or leaving a game starts over. Use the “Return to game” button on Sources to preserve your place during the session.
+Keep references in `src/content.ts` and match each case's reference IDs to that list. Record content verification in `REVIEW.md`.
+
+Each run shuffles all four cases. Submit each case once, review the explanation, then move on. The score appears after the last case. Replay starts a new shuffled run. Reload resets progress. The Sources screen can return to an in-progress case.
 
 ## Review and handover
 

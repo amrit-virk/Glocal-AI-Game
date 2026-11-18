@@ -1,39 +1,34 @@
-import type { Scenario } from "./content";
-export type Round = {
-  attempts: number;
-  earned: boolean;
-  correct: boolean;
-  finished: boolean;
-};
-export const newRound = (): Round => ({
-  attempts: 0,
-  earned: false,
-  correct: false,
-  finished: false,
-});
-export function evaluate(
-  scenario: Scenario,
-  selections: string[][],
-): boolean[] {
-  return scenario.stages.map((stage, i) => {
-    const chosen = new Set(selections[i] ?? []);
-    return (
-      chosen.size === stage.answers.length &&
-      stage.answers.every((id) => chosen.has(id))
-    );
-  });
+import type { Bias, Privacy } from "./content";
+
+export function inspectPrompt(puzzle: Privacy, prompt: string) {
+  const text = prompt.normalize("NFKC").toLowerCase();
+  const words = text.replace(/[^\p{L}\p{N}:]+/gu, " ");
+  const exposed = puzzle.privateDetails
+    .filter(({ pattern }) => pattern.test(words))
+    .map(({ label }) => label);
+  if (/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/i.test(text)) exposed.push("An email address");
+  if (/(?<!\d)(?:\+?1[ .-]?)?(?:\(?\d{3}\)?[ .-]?)?\d{3}[ .-]?\d{4}(?!\d)/.test(text)) {
+    exposed.push("A phone number or similar sequence");
+  }
+  const missing = puzzle.requirements
+    .filter(({ pattern }) => !pattern.test(words))
+    .map(({ label }) => label);
+  return { exposed, missing, solved: !exposed.length && !missing.length };
 }
-export function submit(
-  round: Round,
-  scenario: Scenario,
-  selections: string[][],
-): Round {
-  if (round.finished) return round;
-  const correct = evaluate(scenario, selections).every(Boolean);
+
+export function testPlan(puzzle: Bias, selected: Set<number>) {
+  const coverage = new Set([...selected].flatMap((index) => puzzle.repairs[index].helps));
   return {
-    attempts: round.attempts + 1,
-    earned: round.attempts === 0 ? correct : round.earned,
-    correct,
-    finished: correct || round.attempts >= 1,
+    coverage,
+    solved: selected.size <= puzzle.slots && coverage.size === puzzle.people.length,
   };
+}
+
+export function shuffleCases<T>(cases: readonly T[]): T[] {
+  const shuffled = [...cases];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
