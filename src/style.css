@@ -472,22 +472,45 @@ button:hover, .button:hover { background: #344c43; }
 
 .streak-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 48px auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px 24px;
-  padding: 20px 24px;
-  margin-top: 24px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface);
+  gap: 18px;
+  margin-top: 20px;
+  padding: 16px 22px;
+  border-radius: 16px;
+  background: #19362c;
+  color: #fffefa;
 }
-.streak-panel h2 { margin-bottom: 6px; }
-.streak-panel p { margin: 0; }
-.streak-panel dl { display: flex; gap: 24px; margin: 0; }
-.streak-panel dt { font-size: .8rem; color: var(--muted); }
-.streak-panel dd { margin: 0; font-size: 1.25rem; font-weight: 750; white-space: nowrap; }
-.streak-panel .streak-note { grid-column: 1 / -1; color: var(--muted); font-size: .8rem; }
-.streak-panel [role="status"] { grid-column: 1 / -1; }
+.streak-flame {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #ffe6b4;
+  font-size: 1.8rem;
+  line-height: 1;
+  transform: rotate(-7deg);
+}
+.streak-panel dl, .streak-panel p { margin: 0; }
+.streak-panel dt { font-size: .75rem; color: #d4e4d9; }
+.streak-panel dd { margin: 0; font-size: 1.35rem; font-weight: 800; white-space: nowrap; }
+.streak-current dd { color: #e2f19d; }
+.streak-message { border-left: 1px solid #587568; padding-left: 20px; }
+.streak-message strong { font-size: 1rem; }
+.streak-message p { font-size: .86rem; color: #d4e4d9; }
+.streak-best { text-align: right; }
+.streak-best dd { font-size: 1rem; }
+.streak-panel [role="status"] { grid-column: 1 / -1; font-size: .85rem; }
+.streak-complete .streak-flame { background: #ffc568; }
 @media (max-width: 660px) {
-  .streak-panel { grid-template-columns: 1fr; padding: 16px; gap: 14px; }
+  .streak-panel {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 12px;
+  }
+  .streak-flame { width: 42px; height: 42px; font-size: 1.6rem; border-radius: 12px; }
+  .streak-message { grid-column: 1 / -1; grid-row: 2; padding: 8px 0 0; border-left: 0; border-top: 1px solid #587568; }
+  .streak-best { grid-column: 3; grid-row: 1; }
 }

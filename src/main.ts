@@ -50,17 +50,19 @@ function streakPanel() {
   const today = localDay();
   const current = currentStreak(streak, today);
   const doneToday = streak?.lastDay === today;
-  return `<section class="streak-panel" aria-labelledby="streak-heading">
-    <div><h2 id="streak-heading">Daily streak</h2>
-      <p>${doneToday ? "Today’s practice is complete. Come back tomorrow to keep it going."
-        : current ? "Finish any game today to keep your streak going."
-        : "Finish any game to start a streak. Each day of practice counts."}</p>
+  return `<section class="streak-panel ${doneToday ? "streak-complete" : ""}" aria-label="Daily streak">
+    <span class="streak-flame" aria-hidden="true">🔥</span>
+    <dl class="streak-current"><div><dt>Daily streak</dt><dd>${current} ${current === 1 ? "day" : "days"}</dd></div></dl>
+    <div class="streak-message">
+      <strong>${doneToday ? "You’re on fire." : current ? "Keep the fire going." : "Start your streak."}</strong>
+      <p>${doneToday ? "Today’s practice is complete. See you tomorrow."
+        : current ? "One game today keeps it going."
+        : "Finish a game to light it up."}</p>
     </div>
-    <dl><div><dt>Current</dt><dd>${current} ${current === 1 ? "day" : "days"}</dd></div>
-      <div><dt>Best</dt><dd>${streak?.best ?? 0} ${streak?.best === 1 ? "day" : "days"}</dd></div></dl>
-    <p class="streak-note">Saved in this browser with a cookie. Days follow your device’s local time.</p>
+    <dl class="streak-best"><div><dt>Personal best</dt><dd>${streak?.best ?? 0} ${streak?.best === 1 ? "day" : "days"}</dd></div></dl>
     ${streakSaved ? "" : '<p role="status">Your browser couldn’t save this streak. Allow cookies for this site to keep it between visits.</p>'}
   </section>`;
+
 }
 
 function home() {
