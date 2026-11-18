@@ -26,6 +26,7 @@ const esc = (s: string) =>
 let initialRender = true;
 function paint(html: string) {
   main.innerHTML = html;
+  document.getElementById("streak-header")!.innerHTML = streakPanel();
   if (!initialRender) main.focus();
   initialRender = false;
   window.scrollTo(0, 0);
@@ -50,17 +51,20 @@ function streakPanel() {
   const today = localDay();
   const current = currentStreak(streak, today);
   const doneToday = streak?.lastDay === today;
-  return `<section class="streak-panel ${doneToday ? "streak-complete" : ""}" aria-label="Daily streak">
-    <span class="streak-flame" aria-hidden="true">🔥</span>
-    <dl class="streak-current"><div><dt>Daily streak</dt><dd>${current} ${current === 1 ? "day" : "days"}</dd></div></dl>
-    <div class="streak-message">
-      <strong>${doneToday ? "You’re on fire." : current ? "Keep the fire going." : "Start your streak."}</strong>
-      <p>${doneToday ? "Today’s practice is complete. See you tomorrow."
-        : current ? "One game today keeps it going."
-        : "Finish a game to light it up."}</p>
-    </div>
-    <dl class="streak-best"><div><dt>Personal best</dt><dd>${streak?.best ?? 0} ${streak?.best === 1 ? "day" : "days"}</dd></div></dl>
-    ${streakSaved ? "" : '<p role="status">Your browser couldn’t save this streak. Allow cookies for this site to keep it between visits.</p>'}
+  return `<section class="streak-counter" aria-label="Daily streak">
+    <details ${streakSaved ? "" : "open"}>
+      <summary aria-label="Daily streak: ${current} ${current === 1 ? "day" : "days"}">
+        <span aria-hidden="true">🔥</span><strong>${current}</strong>
+      </summary>
+      <div class="streak-popover">
+        <dl><div><dt>Current streak</dt><dd>${current} ${current === 1 ? "day" : "days"}</dd></div>
+          <div><dt>Personal best</dt><dd>${streak?.best ?? 0} ${streak?.best === 1 ? "day" : "days"}</dd></div></dl>
+        <p>${doneToday ? "Today’s practice is complete. See you tomorrow."
+          : current ? "One game today keeps it going."
+          : "Finish a game to light it up."}</p>
+        ${streakSaved ? "" : '<p role="status">Your browser couldn’t save this streak. Allow cookies for this site to keep it between visits.</p>'}
+      </div>
+    </details>
   </section>`;
 
 }
@@ -88,7 +92,6 @@ function home() {
         </div>
       </div>
     </section>
-    ${streakPanel()}
     <section class="game-picker" aria-labelledby="choose">
       <div class="section-heading"><h2 id="choose" tabindex="-1">Choose a game</h2><span>4 cases each · Untimed</span></div>
       <div class="cards">${games.map((g, i) => `
@@ -273,7 +276,6 @@ function results() {
         <div class="score-track" aria-hidden="true">${cases.map((_, i) => `<span class="${i < score ? "scored" : ""}"></span>`).join("")}</div>
       </div>
     </div>
-    ${streakPanel()}
     <section class="other-games" aria-labelledby="another-game">
       <h2 id="another-game">Try another game</h2>
       <div class="next-games">${games.filter((other) => other.id !== g.id).map((other) => `
@@ -401,6 +403,17 @@ main.addEventListener("click", (e) => {
     } else selected.add(i);
   }
   scenario(action);
+});
+document.addEventListener("click", (event) => {
+  const details = document.querySelector<HTMLDetailsElement>(".streak-counter details");
+  if (details && event.target instanceof Node && !details.contains(event.target)) details.open = false;
+}, true);
+document.addEventListener("keydown", (event) => {
+  const details = document.querySelector<HTMLDetailsElement>(".streak-counter details[open]");
+  if (event.key === "Escape" && details) {
+    details.open = false;
+    details.querySelector<HTMLElement>("summary")?.focus();
+  }
 });
 window.addEventListener("hashchange", route);
 route();

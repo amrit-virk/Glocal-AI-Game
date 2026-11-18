@@ -470,47 +470,40 @@ button:hover, .button:hover { background: #344c43; }
   .ai-comparison { grid-template-columns: 1fr; }
 }
 
-.streak-panel {
-  display: grid;
-  grid-template-columns: 48px auto minmax(0, 1fr) auto;
+.header-tools { display: flex; align-items: center; gap: 20px; }
+.streak-counter { position: relative; }
+.streak-counter summary {
+  display: inline-flex;
   align-items: center;
-  gap: 18px;
-  margin-top: 20px;
-  padding: 16px 22px;
-  border-radius: 16px;
-  background: #19362c;
-  color: #fffefa;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: var(--ink);
+  list-style: none;
 }
-.streak-flame {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: #ffe6b4;
-  font-size: 1.8rem;
-  line-height: 1;
-  transform: rotate(-7deg);
+.streak-counter summary::-webkit-details-marker { display: none; }
+.streak-counter summary:hover, .streak-counter details[open] summary { background: #f5e6cc; }
+.streak-counter summary > span { font-size: 1.25rem; }
+.streak-counter summary > strong { font-size: 1rem; }
+.streak-popover {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(280px, calc(100vw - 28px));
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #18252220;
 }
-.streak-panel dl, .streak-panel p { margin: 0; }
-.streak-panel dt { font-size: .75rem; color: #d4e4d9; }
-.streak-panel dd { margin: 0; font-size: 1.35rem; font-weight: 800; white-space: nowrap; }
-.streak-current dd { color: #e2f19d; }
-.streak-message { border-left: 1px solid #587568; padding-left: 20px; }
-.streak-message strong { font-size: 1rem; }
-.streak-message p { font-size: .86rem; color: #d4e4d9; }
-.streak-best { text-align: right; }
-.streak-best dd { font-size: 1rem; }
-.streak-panel [role="status"] { grid-column: 1 / -1; font-size: .85rem; }
-.streak-complete .streak-flame { background: #ffc568; }
+.streak-popover dl { display: flex; justify-content: space-between; gap: 16px; margin: 0; }
+.streak-popover dt { font-size: .78rem; color: var(--muted); }
+.streak-popover dd { margin: 3px 0 0; font-size: 1.2rem; font-weight: 800; }
+.streak-popover p { margin: 14px 0 0; font-size: .88rem; }
 @media (max-width: 660px) {
-  .streak-panel {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
-    gap: 10px;
-    padding: 14px;
-    border-radius: 12px;
-  }
-  .streak-flame { width: 42px; height: 42px; font-size: 1.6rem; border-radius: 12px; }
-  .streak-message { grid-column: 1 / -1; grid-row: 2; padding: 8px 0 0; border-left: 0; border-top: 1px solid #587568; }
-  .streak-best { grid-column: 3; grid-row: 1; }
+  .header-tools { gap: 9px; }
+  .header-tools nav { gap: 12px; }
+  .streak-counter summary { padding-inline: 4px; }
 }
