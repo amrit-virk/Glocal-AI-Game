@@ -112,7 +112,7 @@ function title() {
     <div class="menu-content">
       <p class="menu-credit">AI Arcade</p>
       <h1>LAST LIGHT<br><span>RADIO</span></h1>
-      <p class="menu-premise">Check the draft. Prepare the crew.<br>Decide what goes on air.</p>
+      <p class="menu-premise">An AI wrote the announcement. Some details are wrong.<br>Check its work before you go on air.</p>
       <div class="menu-actions">${state ? btn(state.published ? "View your ending" : "Continue your shift", "continue") : btn("Start your shift", "new")}
         ${state ? btn("New shift", "new", true) : ""}
         ${btn("How to play", "help", true)}
@@ -169,8 +169,8 @@ function notebookContent() {
 }
 const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: string[] }> = {
   bulletin: {
-    title: "Check the public bulletin",
-    purpose: "Check the time and entrance against the original messages.",
+    title: "Check the AI’s announcement",
+    purpose: "The AI mixed details from different events into one radio announcement. Check its time and entrance against the original messages.",
     steps: [
       "Read the original messages. You can reopen them in your notebook.",
       "Choose a time, an entrance, and the source supporting your decision.",
@@ -178,8 +178,8 @@ const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: strin
     ],
   },
   prompt: {
-    title: "Write a useful, private request",
-    purpose: "Rewrite the copied prompt into a useful briefing request without private details.",
+    title: "Prepare the AI request",
+    purpose: "Mara’s copied request includes private volunteer notes. Decide what the AI needs to receive to write a useful briefing.",
     steps: [
       "Edit Your request. Keep practical requirements; remove identifying details.",
       "Review request checks your draft without sending it. You can review repeatedly.",
@@ -187,8 +187,8 @@ const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: strin
     ],
   },
   plan: {
-    title: "Choose workable arrangements",
-    purpose: "Spend up to three crew points on arrangements for the volunteers.",
+    title: "Check the AI’s plan",
+    purpose: "The AI suggested a video briefing for everyone without knowing their circumstances. Check who that recommendation would leave out.",
     steps: [
       "Select arrangements within the three-point budget. Select again to remove.",
       "Preview the plan to see who it reaches. Adjust and preview as needed.",
@@ -229,12 +229,12 @@ function deskContent() {
 }
 function bulletinTab() {
   const current = state!;
-  if (!investigationComplete(current)) return `<div class="task-columns"><section><h3>The assistant’s starting draft</h3><blockquote>${esc(documents.draft.body)}</blockquote></section>
-    <section class="output-paper"><h3>Check the originals first</h3><p>The booking message and an older poster are in the equipment room. Which one applies tonight?</p></section></div>`;
-  return `<div class="task-columns"><section><h3>The assistant’s starting draft</h3><blockquote>${esc(documents.draft.body)}</blockquote>
+  if (!investigationComplete(current)) return `<div class="task-columns"><section><h3>AI-generated announcement · unchecked</h3><blockquote>${esc(documents.draft.body)}</blockquote></section>
+    <section class="output-paper"><h3>Check the originals first</h3><p>The AI used a booking message and an older poster. Find both in the equipment room and check which details apply tonight.</p></section></div>`;
+  return `<div class="task-columns"><section><h3>AI-generated announcement · unchecked</h3><blockquote>${esc(documents.draft.body)}</blockquote>
     <h3>Original sources</h3><div class="source-buttons">${current.evidence.filter((id) => id !== "roster").map((id) => btn(documents[id].title, "document:" + id, true)).join("")}</div>
 </section>
-    <section class="output-paper"><h3>Your public bulletin</h3>
+    <section class="output-paper"><h3>Your edited announcement</h3>
       <label for="opening-time">Opening time</label><select id="opening-time" data-field="time"><option value="18:00" ${current.bulletin.time === "18:00" ? "selected" : ""}>Saturday, 18:00</option><option value="18:30" ${current.bulletin.time === "18:30" ? "selected" : ""}>Saturday, 18:30</option></select>
       <label for="entrance">Tell visitors to use</label><select id="entrance" data-field="entrance"><option value="front" ${current.bulletin.entrance === "front" ? "selected" : ""}>The front doors</option><option value="east" ${current.bulletin.entrance === "east" ? "selected" : ""}>The east entrance</option></select>
       <label for="source">Evidence behind your corrections</label><select id="source" data-field="source"><option value="">Choose a source</option>${current.evidence.filter((id) => ["booking", "poster", "draft"].includes(id)).map((id) => `<option value="${id}" ${current.bulletin.source === id ? "selected" : ""}>${documents[id].title}</option>`).join("")}</select>
@@ -246,7 +246,7 @@ function bulletinPreview() {
 function promptTab() {
   const current = state!;
   const check = reviewPrompt(current.draft);
-  return `<div class="task-columns"><section><h3>Copied planning prompt</h3><blockquote>${esc(promptOriginal)}</blockquote>
+  return `<div class="task-columns"><section><h3>Request prepared for the AI</h3><blockquote>${esc(promptOriginal)}</blockquote>
     <label for="prompt">Your request to the station assistant</label><textarea id="prompt" maxlength="1600" spellcheck="false">${esc(current.draft)}</textarea>
 
     <div class="actions">${btn("Review request", "review-prompt", true)}${btn(current.sentPrompt === null ? "Send request" : "Send a revised request", "send-prompt")}</div></section>
@@ -258,7 +258,7 @@ function promptTab() {
 }
 function planTab() {
   const current = state!;
-  return `<p>The assistant proposed a video briefing for everyone. It had no information about data limits or transport. You have <strong>3 crew points</strong> to put workable arrangements in place.</p>
+  return `<blockquote><strong>AI recommendation</strong><br>“All volunteers can watch the mobile briefing at 6:15.”</blockquote><p>Check that recommendation against what the volunteers told you. Spend up to <strong>3 crew points</strong> on a plan they can use.</p>
     ${current.late ? '<p class="late-notice">New information · The harbour bus is cancelled. The inland road is still open.</p>' : ""}
     <div class="task-columns"><section><h3>Choose arrangements <span class="cost">${planCost(current.repairs)}/3</span></h3>
       <div class="repair-options">${arrangements.map((item) => `<button aria-pressed="${current.repairs.includes(item.id)}" data-action="repair:${item.id}"><strong>${item.name}<span>${item.cost} ${item.cost === 1 ? "point" : "points"}</span></strong><span>${item.description}</span></button>`).join("")}</div>
@@ -274,7 +274,7 @@ function modalContent(): string {
   if (modal === "tutorial") return taskTutorial();
   if (modal === "collection") return collectionContent();
   if (modal === "help") return `<h2 id="modal-title">How to play</h2>
-    <p>You’re checking a radio bulletin prepared with AI. People will follow what you broadcast.</p>
+    <p>The station’s AI wrote a radio announcement using mixed sources. Some details are wrong. You’re the editor: verify the draft, prepare a private AI request, and check the suggested plan before broadcasting.</p>
     <ol class="help-list"><li><strong>Follow the current objective.</strong> It stays in the corner of the game. Explore the room to find what you need.</li><li><strong>Explore the station.</strong> Click diamond markers, people, and room exits. Documents stay in your notebook.</li><li><strong>Prepare at the desk.</strong> The bulletin, AI request, and arrangements open in order. Each task has a short introduction and a How this works button.</li><li><strong>Recheck, then broadcast.</strong> Ada brings a late message. Respond to it before you go on air. The ending explains the consequences of your decisions.</li></ol>
     <p class="small">Click dialogue to reveal the line, then click again to advance. Tab and Enter also work. The game is untimed and saves your progress here.</p>${btn("Back", "close")}`;
   if (modal === "new") return `<h2 id="modal-title">Start a new shift?</h2><p>This replaces the current adventure save. Your discovered endings stay in the collection.</p><div class="actions">${btn("Start new shift", "confirm-new")}${btn("Keep current shift", "close", true)}</div>`;
@@ -282,7 +282,7 @@ function modalContent(): string {
   if (modal === "map") return `<div class="modal-heading"><h2 id="modal-title">The station</h2>${btn("Close", "close", true)}</div><p>Choose a room.</p><div class="map-rooms">${Object.entries(scenes).map(([id, room]) => `<button data-action="travel:${id}"><span class="map-preview atlas ${id}"></span><strong>${room.name}</strong><span>${room.description}</span></button>`).join("")}</div>`;
   if (modal === "document") {
     const doc = documents[selectedDocument!];
-    return `<div class="modal-heading"><div><h2 id="modal-title">${doc.title}</h2><p class="document-source">${esc(doc.source)}</p></div>${btn("Close", "close", true)}</div><div class="document-body">${esc(doc.body)}</div>${selectedDocument === "draft" ? '<p>What source would you check before relying on this?</p>' : ""}${btn("Return", "close")}`;
+    return `<div class="modal-heading"><div><h2 id="modal-title">${doc.title}</h2><p class="document-source">${esc(doc.source)}</p></div>${btn("Close", "close", true)}</div><div class="document-body">${esc(doc.body)}</div>${selectedDocument === "draft" ? '<p>This is AI output, not a verified source. What would you check before broadcasting it?</p>' : ""}${btn("Return", "close")}`;
   }
   if (modal === "desk") return deskContent();
   if (modal === "send") return `<h2 id="modal-title">Send this request?</h2><p>The assistant will receive the text below. You can revise it first.</p><blockquote>${esc(state!.draft)}</blockquote><p class="small">This is a story action. The prototype processes the request on your device.</p><div class="actions">${btn("Send to assistant", "confirm-send")}${btn("Keep editing", "cancel-send", true)}</div>`;
@@ -296,14 +296,14 @@ function report() {
   const checks = [
     { title: "Opening time", passed: result.time, why: result.time ? "Visitors hear 18:30, after the market clears the hall." : "The 18:00 announcement sends visitors before the hall is ready. Check tonight’s booking, not the reused flyer." },
     { title: "Evening entrance", passed: result.entrance, why: result.entrance ? "Visitors use the east entrance after the front doors lock." : "The front doors lock at 18:00. The current booking gives the east entrance for evening visitors." },
-    { title: "Evidence behind the bulletin", passed: result.evidence, why: result.evidence ? "You grounded the changes in the current booking confirmation." : "The source you chose doesn’t establish tonight’s arrangements. Trace the assistant’s summary to the current booking." },
-    { title: "Information handling", passed: result.privacy, why: current.leaked ? "A sent request included known private details. Generalize names, contact information, and diagnoses before sending. A later revision can improve the draft, but does not retract an earlier disclosure." : current.sentUseful ? "Your request preserved useful access and offline requirements without the known private details." : "The request kept some task requirements out. Privacy also needs a useful replacement: keep the entrance, opening time, and offline instructions." },
-    { title: "A plan people can use", passed: result.access, why: result.access ? "The inland pickup carries people and briefing sheets. The staffed east ramp gives Rae a usable entrance." : result.coverage.filter((person) => !person.works).map((person) => person.reason).join(" ") },
+    { title: "Evidence behind the bulletin", passed: result.evidence, why: result.evidence ? "You checked the AI draft against tonight’s booking. A confident summary still needs an applicable source." : "The chosen source doesn’t establish tonight’s arrangements. Check the AI draft against a current original; its own summary is not independent evidence." },
+    { title: "Information handling", passed: result.privacy, why: current.leaked ? "A sent request included known private details. Generalize names, contact information, and diagnoses before sending. A later revision can improve the draft, but does not retract an earlier disclosure." : current.sentUseful ? "You gave the AI the practical context it needed without sharing names, contact details, or a diagnosis. Keep useful requirements when removing private information." : "The request kept some task requirements out. Privacy also needs a useful replacement: keep the entrance, opening time, and offline instructions." },
+    { title: "A plan people can use", passed: result.access, why: result.access ? "You replaced the AI’s one-size-fits-all recommendation with a pickup, paper briefings, and a staffed ramp. Check AI suggestions with the people they affect." : result.coverage.filter((person) => !person.works).map((person) => person.reason).join(" ") },
   ];
   return `<section class="ending-scene"><div class="ending-image atlas exterior"></div><div class="ending-copy"><h1>${ending.title}</h1><p>${ending.scene}</p><p class="ending-summary">${ending.summary}</p></div></section>
     <section class="report-card"><div class="report-heading"><div><h2>Your shift report</h2></div><span class="report-score">${checks.filter((item) => item.passed).length}<small>/ 5</small></span></div>
     ${checks.map((item) => `<article><span class="check-mark ${item.passed ? "pass" : ""}" aria-hidden="true">${item.passed ? "✓" : "!"}</span><div><h3>${item.title} · ${item.passed ? "Handled" : "Revisit"}</h3><p>${item.why}</p></div></article>`).join("")}
-    <details><summary>What changed when the message arrived?</summary><p>The bus cancellation left the opening time intact but changed travel. A shared inland pickup with paper briefings costs two points. Clearing the east ramp uses the third. A bus greeter and a video link could not replace that.</p></details>
+    <details><summary>What changed when the message arrived?</summary><p>The bus cancellation left the opening time intact but changed travel. The inland pickup with paper briefings and the cleared ramp use all three points. Recheck recommendations when conditions change; a previously workable plan can stop fitting.</p></details>
     <p class="small">You found ${current.evidence.length} of ${Object.keys(documents).length} documents and spoke to ${current.met.length} of 3 people. Ending saved to your collection. Replaying can reveal other outcomes.</p><div class="actions">${btn("Play another shift", "new")}${btn("View ending collection", "title", true)}</div>
     ${saveFailed ? '<p class="save-error">This browser could not save the ending. Keep this page open to read the report.</p>' : ""}</section>`;
 }
@@ -369,8 +369,8 @@ function handle(action: string) {
     promptChecked = false; planChecked = false; notice = "";
     persist();
     openDialogue({ speaker: "Ada", lines: [
-      "You’re on the evening desk. The repair café needs its announcement checked before we broadcast. The station assistant prepared a draft, and people will follow the details we put on air.",
-      "First, open the broadcast desk and read that draft. Your objective stays in the corner. Explore the station to find what you need.",
+      "Our AI assistant drafted tonight’s radio announcement, but it mixed details from different events. People will follow what we broadcast.",
+      "You’re the editor. Check the AI’s draft against the original messages, correct the announcement, and prepare a briefing and plan the crew can use. Start at the broadcast desk.",
     ] });
     return;
   }

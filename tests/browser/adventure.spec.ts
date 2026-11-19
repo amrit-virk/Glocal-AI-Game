@@ -27,11 +27,13 @@ async function travel(page: Page, name: string) {
 }
 async function prepare(page: Page, privateRequest = false) {
   await start(page);
-  await expect(page.getByRole("heading", { name: "Read the assistant’s draft" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Check the AI’s announcement" })).toBeVisible();
   await page.getByRole("button", { name: "Open the broadcast desk" }).click();
-  await expect(page.getByRole("heading", { name: "Check the public bulletin" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Check the AI’s announcement" })).toBeVisible();
   await enterTask(page);
   await expect(page.getByRole("heading", { name: "Check the originals first" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "AI-generated announcement · unchecked" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("The AI used a booking message and an older poster");
   await expect(page.getByRole("button", { name: "Go to equipment room" })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to the room", exact: true }).click();
   await travel(page, "Equipment room");
@@ -122,6 +124,7 @@ test("completion checkpoints allow an unsuccessful final plan", async ({ page })
 test("menu, tutorial, locked tasks, and keyboard dialogue are clear", async ({ page }, info) => {
   await page.goto("/");
   await expect(page.getByText("Click people, objects, and exits.")).toBeVisible();
+  await expect(page.getByText(/An AI wrote the announcement. Some details are wrong./)).toBeVisible();
   await page.screenshot({ path: `menu-${info.project.name}.png`, fullPage: true });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await start(page);
@@ -145,7 +148,7 @@ test("clicking dialogue reveals it and then advances it", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Show text" })).toHaveCount(0);
   const speech = page.getByRole("button", { name: "Reveal or advance dialogue" });
   await speech.click();
-  await expect(page.locator("#speech")).toContainText("people will follow");
+  await expect(page.locator("#speech")).toContainText("People will follow");
   await expect(page.locator(".speech-head")).toContainText("1/2");
   await speech.press("Enter");
   await expect(page.locator(".speech-head")).toContainText("2/2");

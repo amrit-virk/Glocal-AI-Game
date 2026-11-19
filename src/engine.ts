@@ -175,13 +175,13 @@ export function currentObjective(state: GameState): Objective {
     };
   }
   if (!state.evidence.includes("draft")) return {
-    title: "Read the assistant’s draft",
-    instruction: "The draft is waiting at the broadcast desk.",
+    title: "Check the AI’s announcement",
+    instruction: "The AI mixed event details. Its unchecked announcement is at the desk.",
     action: "desk", label: "Open broadcast desk", target: "desk", checks: [],
   };
   if (!investigationComplete(state)) return {
     title: "Compare the original messages",
-    instruction: "Check the booking and old poster. Which details apply tonight?",
+    instruction: "Compare the AI’s claims with the booking and old poster.",
     action: "travel:archive", label: "Go to equipment room", target: "archive",
     checks: [
       { label: "Booking message read", done: state.evidence.includes("booking") },
@@ -205,12 +205,12 @@ export function currentObjective(state: GameState): Objective {
   };
   if (state.sentPrompt === null) return {
     title: "Prepare a briefing request",
-    instruction: "Rewrite the copied prompt. Check what you share before sending.",
+    instruction: "Mara copied private notes into an AI request. Rewrite it before sending.",
     action: "task:prompt", label: "Open AI request", target: "desk", checks: [],
   };
   if (!state.planReviewed) return {
     title: "Make arrangements for the crew",
-    instruction: "Three crew points. Preview who your arrangements reach.",
+    instruction: "Does the AI’s video plan work for everyone? Check with the crew.",
     action: "task:plan", label: "Open arrangements", target: "desk", checks: [],
   };
   return {

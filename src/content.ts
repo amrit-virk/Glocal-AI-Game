@@ -23,8 +23,8 @@ export const scenes: Record<SceneId, { name: string; description: string; exits:
 
 export const documents: Record<DocumentId, { title: string; source: string; body: string; clue: string }> = {
   draft: {
-    title: "The AI bulletin",
-    source: "Station assistant · draft",
+    title: "AI-generated radio announcement",
+    source: "AI assistant · unchecked draft",
     body: "The harbour repair café opens this Saturday at 6 p.m. Bring a small item to mend. Enter through the front doors. All volunteers can watch the mobile briefing at 6:15.",
     clue: "The assistant was given a flyer and a booking email. It combined them without checking which details apply tonight.",
   },
@@ -65,8 +65,8 @@ export const conversations: Record<PersonId, Dialogue> = {
   ada: {
     speaker: "Ada",
     lines: [
-      "You’re on the evening desk. The repair café needs its bulletin before we close up. Our assistant has made a draft. It sounds certain. That’s the part I always check.",
-      "I fed it last month’s poster and today’s booking message. Originals are in the equipment room. Talk to Mara and Ivo outside before you approve the volunteer plan.",
+      "You’re on the evening desk. The repair café needs its bulletin before we close up. Our AI assistant wrote the announcement. It mixed details from different events, so we need to check its work.",
+      "I gave the AI last month’s poster and today’s booking message. Originals are in the equipment room. Talk to Mara and Ivo outside before you approve the volunteer plan.",
       "Use the desk to edit the bulletin and prepare a briefing. You can test and revise the work. Sending a prompt shares its contents. Going on air is your final commitment.",
     ],
   },
@@ -74,14 +74,14 @@ export const conversations: Record<PersonId, Dialogue> = {
     speaker: "Mara",
     lines: [
       "We’re repairing lamps and small household things at the hall tonight. The market is packing up first, so please use the hall’s actual opening time.",
-      "I copied my private volunteer sheet into the briefing draft. It’s on the bench. We need practical instructions, but nobody’s contact details or diagnosis should go into the assistant.",
+      "I copied my private volunteer sheet into a request for the AI. It hasn’t been sent yet. It’s on the bench. We need practical instructions, but nobody’s contact details or diagnosis should go into the assistant.",
       "Rae needs the east ramp clear. We can put a greeter there and move the market trolley. The crew can handle three points’ worth of arrangements. Ask Ivo what he needs before choosing.",
     ],
   },
   ivo: {
     speaker: "Ivo",
     lines: [
-      "I’m collecting the tools here, then going to the hall. My phone barely loads messages. A video briefing won’t reach me.",
+      "I’m collecting the tools here, then going to the hall. My phone barely loads messages. The AI suggested a video briefing for everyone, but that won’t reach me.",
       "If someone prints a sheet, I can carry it. A shared pickup would work too if the driver brings copies. Noor usually takes the bus. Rae can get there herself if the ramp is clear.",
       "A plan can sound inclusive and still assume everyone has the same connection or transport. Give us a way to actually follow it.",
     ],

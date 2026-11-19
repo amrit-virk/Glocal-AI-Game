@@ -1,6 +1,6 @@
 # Last Light Radio · AI Arcade
 
-A short, single-player pixel-art adventure about checking an AI-assisted radio bulletin. Explore the broadcast room, equipment room, and sheltered courtyard, meet the volunteers, and prepare the evening broadcast.
+A short, single-player pixel-art adventure about correcting an AI-generated radio announcement that mixed details from different events. You act as the human editor before the announcement goes on air. Explore the broadcast room, equipment room, and sheltered courtyard, meet the volunteers, and prepare the evening broadcast.
 
 ## Run locally
 
@@ -22,6 +22,8 @@ Dialogue appears in a bottom text box. Click the text box to reveal the line imm
 The compact objective in the game HUD shows the next task and tracks required discoveries. The broadcast desk introduces the public bulletin, AI request, and crew arrangements in order, with a short tutorial for each task. Tutorials can be reopened with How this works. Save the bulletin and preview arrangements to complete each preparation step; these checkpoints record completion without revealing the correct answers. Inspect the original notices and talk to people to learn what the assistant’s starting draft missed. You can review and revise preparations before committing.
 
 Sending an AI request is a permanent story choice. A later revision cannot erase an earlier disclosure. Ready for broadcast advances the story to the late notice. Broadcast commits the final bulletin and plan. The report explains each outcome, and the title screen collects all three discovered endings.
+
+AI authorship and the player’s editor role are introduced on the menu and in Ada’s opening conversation. The desk distinguishes unchecked AI output from the player’s edited announcement, Mara’s unsent AI request, and the AI’s video recommendation. The ending connects consequences to source verification, sharing only necessary information, and checking recommendations with affected people.
 
 The assistant is simulated. Prompt review uses case-specific patterns, not a remote model or a general safety assessment. All names, notices, and incidents are fictional. Mentor review of educational content is pending.
 
