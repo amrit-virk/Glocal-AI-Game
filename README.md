@@ -15,11 +15,11 @@ Open the address Vite prints, normally http://localhost:5173/.
 
 ## Play
 
-Click a person or glowing marker to walk over and interact. Click the floor to move within the clear walking area. Scene exits and the Station map connect all three locations. The interface supports Tab and Enter.
+Click a person or named object to walk over and interact. Click the floor to move within the clear walking area. Scene exits and the Station map connect all three locations. The interface supports Tab and Enter.
 
-Dialogue appears in a bottom text box. Use Show text to reveal the line immediately. Continue advances it. Reduced-motion preferences disable the typewriter and walking transitions.
+Dialogue appears in a bottom text box. Click the text box to reveal the line immediately; click again to advance. Enter does the same. Reduced-motion preferences disable the typewriter and walking transitions.
 
-The broadcast desk contains the public bulletin, AI request, and crew arrangements. Inspect the original notices and talk to people to learn what the assistant’s starting draft missed. You can review and revise preparations before committing.
+The current objective above the scene shows the next task and tracks required discoveries. The broadcast desk introduces the public bulletin, AI request, and crew arrangements in order, with a short tutorial for each task. Tutorials can be reopened with How this works. Save the bulletin and preview arrangements to complete each preparation step; these checkpoints record completion without revealing the correct answers. Inspect the original notices and talk to people to learn what the assistant’s starting draft missed. You can review and revise preparations before committing.
 
 Sending an AI request is a permanent story choice. A later revision cannot erase an earlier disclosure. Ready for broadcast advances the story to the late notice. Broadcast commits the final bulletin and plan. The report explains each outcome, and the title screen collects all three discovered endings.
 

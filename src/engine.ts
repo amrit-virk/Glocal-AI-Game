@@ -15,6 +15,10 @@ export type GameState = {
   late: boolean;
   published: boolean;
   ending: EndingId | null;
+  bulletinFiled: boolean;
+  planReviewed: boolean;
+  latePlanReviewed: boolean;
+  tutorials: string[];
 };
 export type Library = { version: 1; endings: EndingId[]; runs: number };
 export const saveKey = "last_light_save_v2";
@@ -26,6 +30,7 @@ export function newGame(draft: string): GameState {
     bulletin: { time: "18:00", entrance: "front", source: "" },
     draft, sentPrompt: null, leaked: false, sentUseful: false,
     repairs: [], late: false, published: false, ending: null,
+    bulletinFiled: false, planReviewed: false, latePlanReviewed: false, tutorials: [],
   };
 }
 
@@ -89,7 +94,16 @@ export function readSave(value: string | null): GameState | null {
       [state.leaked, state.sentUseful, state.late, state.published].every((value) => typeof value === "boolean") &&
       [null, "clear-signal", "last-minute-save", "crossed-wires"].includes(state.ending) &&
       state.published === (state.ending !== null)
-    ) return state;
+    ) {
+      // Earlier adventure saves predate the preparation checkpoints.
+      state.bulletinFiled ??= Boolean(state.bulletin.source);
+      state.planReviewed ??= state.repairs.length > 0;
+      state.latePlanReviewed ??= state.published;
+      state.tutorials ??= [];
+      if (![state.bulletinFiled, state.planReviewed, state.latePlanReviewed].every((value) => typeof value === "boolean") ||
+        !validIds(state.tutorials, ["bulletin", "prompt", "plan"])) return null;
+      return state;
+    }
   } catch {
     // An invalid save returns to the title screen.
   }
@@ -109,4 +123,99 @@ export function readLibrary(value: string | null): Library {
     // Ending history is independent of the current adventure.
   }
   return { version: 1, endings: [], runs: 0 };
+}
+
+export type DeskTab = "bulletin" | "prompt" | "plan";
+
+export function investigationComplete(state: GameState): boolean {
+  return ["booking", "poster"].every((id) => state.evidence.includes(id as DocumentId));
+}
+
+export function volunteersKnown(state: GameState): boolean {
+  return state.met.includes("mara") && state.met.includes("ivo") && state.evidence.includes("roster");
+}
+
+export function taskAvailable(state: GameState, tab: DeskTab): boolean {
+  if (tab === "bulletin") return true;
+  if (tab === "prompt") return investigationComplete(state) && volunteersKnown(state) && state.bulletinFiled;
+  return state.sentPrompt !== null;
+}
+
+export function readyForBroadcast(state: GameState): boolean {
+  return investigationComplete(state) && volunteersKnown(state) &&
+    state.bulletinFiled && state.sentPrompt !== null && state.planReviewed;
+}
+
+export type Objective = {
+  title: string;
+  instruction: string;
+  action: string;
+  label: string;
+  target: string;
+  checks: { label: string; done: boolean }[];
+};
+
+export function currentObjective(state: GameState): Objective {
+  if (state.late) {
+    if (!state.bulletinFiled) return {
+      title: "Save the revised bulletin",
+      instruction: "You changed the public announcement. Save your bulletin at the desk before broadcasting.",
+      action: "task:bulletin", label: "Review bulletin", target: "desk", checks: [],
+    };
+    if (!state.latePlanReviewed) return {
+      title: "Recheck the transport plan",
+      instruction: "A service has been cancelled. Read the late notice, revise your arrangements, and preview the plan again.",
+      action: "task:plan", label: "Review arrangements", target: "desk",
+      checks: [{ label: "Preview after the service notice", done: false }],
+    };
+    return {
+      title: "Make the final broadcast",
+      instruction: "Check the bulletin and your arrangements one last time. Going on air commits your decisions.",
+      action: "launch", label: "Review broadcast", target: "desk", checks: [],
+    };
+  }
+  if (!state.evidence.includes("draft")) return {
+    title: "Read the assistant’s draft",
+    instruction: "Open the broadcast desk to see the announcement you’ve been asked to check.",
+    action: "desk", label: "Open broadcast desk", target: "desk", checks: [],
+  };
+  if (!investigationComplete(state)) return {
+    title: "Compare the original messages",
+    instruction: "Visit the equipment room. Inspect the booking message and the old poster, then decide which details apply tonight.",
+    action: "travel:archive", label: "Go to equipment room", target: "archive",
+    checks: [
+      { label: "Booking message read", done: state.evidence.includes("booking") },
+      { label: "Old poster read", done: state.evidence.includes("poster") },
+    ],
+  };
+  if (!volunteersKnown(state)) return {
+    title: "Find out what the volunteers need",
+    instruction: "Visit the courtyard. Speak to Mara and Ivo and read the private notes on the bench.",
+    action: "travel:courtyard", label: "Go to courtyard", target: "courtyard",
+    checks: [
+      { label: "Mara heard", done: state.met.includes("mara") },
+      { label: "Ivo heard", done: state.met.includes("ivo") },
+      { label: "Private notes read", done: state.evidence.includes("roster") },
+    ],
+  };
+  if (!state.bulletinFiled) return {
+    title: "Prepare the public bulletin",
+    instruction: "At the desk, choose the opening time and entrance using your sources, then save the bulletin.",
+    action: "task:bulletin", label: "Edit bulletin", target: "desk", checks: [],
+  };
+  if (state.sentPrompt === null) return {
+    title: "Prepare a briefing request",
+    instruction: "Rewrite the copied prompt for a general volunteer briefing. Review what it would share before you send it.",
+    action: "task:prompt", label: "Open AI request", target: "desk", checks: [],
+  };
+  if (!state.planReviewed) return {
+    title: "Make arrangements for the crew",
+    instruction: "Choose arrangements within three crew points, then preview who can use the plan.",
+    action: "task:plan", label: "Open arrangements", target: "desk", checks: [],
+  };
+  return {
+    title: "Check in with Ada",
+    instruction: "Your first preparations are complete. Tell Ada you’re ready for the broadcast check.",
+    action: "ready", label: "Check in with Ada", target: "talk:ada", checks: [],
+  };
 }
