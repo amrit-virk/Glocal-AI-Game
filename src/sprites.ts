@@ -1,5 +1,5 @@
 /** Original 32 × 48 pixel characters, drawn at the room's scale. */
-export function sprite(coat: string, walking = false): string {
+export function sprite(coat: string, walking = false, character = "player"): string {
   const canvas = document.createElement("canvas");
   canvas.width = 32;
   canvas.height = 48;
@@ -46,5 +46,31 @@ export function sprite(coat: string, walking = false): string {
   rect(18, 9, 2, 1, "#28303a");
   rect(16, 10, 1, 2, "#be8960");
   rect(14, 13, 4, 1, "#94694f");
+  if (character === "ada") {
+    // Silver hair in a bun, spectacles, and blue workwear distinguish Ada.
+    context.clearRect(9, 0, 16, 9);
+    rect(10, 4, 12, 6, "#d5b087");
+    rect(10, 3, 12, 4, "#a6a79d");
+    rect(12, 2, 9, 3, "#c0beb0");
+    rect(21, 5, 4, 7, "#898f8c");
+    rect(21, 5, 3, 3, "#b8b9ac");
+    rect(10, 6, 2, 5, "#9b9d94");
+    rect(11, 8, 4, 3, "#35424a");
+    rect(17, 8, 4, 3, "#35424a");
+    rect(12, 9, 2, 1, "#b5c8bd");
+    rect(18, 9, 2, 1, "#b5c8bd");
+    rect(15, 9, 2, 1, "#35424a");
+    rect(6, 26, 4, 3, "#c8c1a5");
+    rect(22, 26, 4, 3, "#b1b29f");
+    rect(10, 22, 3, 5, "#345461");
+    rect(19, 22, 3, 5, "#345461");
+  } else if (character === "mara") {
+    rect(9, 5, 3, 12, "#70483a");
+    rect(20, 5, 3, 12, "#593e37");
+    rect(10, 3, 12, 4, "#83523e");
+  } else if (character === "ivo") {
+    rect(10, 2, 12, 5, "#3b5357");
+    rect(8, 6, 15, 2, "#26393f");
+  }
   return canvas.toDataURL();
 }

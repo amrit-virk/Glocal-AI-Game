@@ -164,24 +164,24 @@ export function currentObjective(state: GameState): Objective {
     };
     if (!state.latePlanReviewed) return {
       title: "Recheck the transport plan",
-      instruction: "A service has been cancelled. Read the late notice, revise your arrangements, and preview the plan again.",
+      instruction: "The bus is cancelled. Recheck and preview your arrangements.",
       action: "task:plan", label: "Review arrangements", target: "desk",
       checks: [{ label: "Preview after the service notice", done: false }],
     };
     return {
       title: "Make the final broadcast",
-      instruction: "Check the bulletin and your arrangements one last time. Going on air commits your decisions.",
+      instruction: "Going on air makes your bulletin and arrangements final.",
       action: "launch", label: "Review broadcast", target: "desk", checks: [],
     };
   }
   if (!state.evidence.includes("draft")) return {
     title: "Read the assistant’s draft",
-    instruction: "Open the broadcast desk to see the announcement you’ve been asked to check.",
+    instruction: "The draft is waiting at the broadcast desk.",
     action: "desk", label: "Open broadcast desk", target: "desk", checks: [],
   };
   if (!investigationComplete(state)) return {
     title: "Compare the original messages",
-    instruction: "Visit the equipment room. Inspect the booking message and the old poster, then decide which details apply tonight.",
+    instruction: "Check the booking and old poster. Which details apply tonight?",
     action: "travel:archive", label: "Go to equipment room", target: "archive",
     checks: [
       { label: "Booking message read", done: state.evidence.includes("booking") },
@@ -190,7 +190,7 @@ export function currentObjective(state: GameState): Objective {
   };
   if (!volunteersKnown(state)) return {
     title: "Find out what the volunteers need",
-    instruction: "Visit the courtyard. Speak to Mara and Ivo and read the private notes on the bench.",
+    instruction: "Hear from Mara and Ivo, and read the volunteer notes.",
     action: "travel:courtyard", label: "Go to courtyard", target: "courtyard",
     checks: [
       { label: "Mara heard", done: state.met.includes("mara") },
@@ -200,22 +200,22 @@ export function currentObjective(state: GameState): Objective {
   };
   if (!state.bulletinFiled) return {
     title: "Prepare the public bulletin",
-    instruction: "At the desk, choose the opening time and entrance using your sources, then save the bulletin.",
+    instruction: "Use your sources to correct and save the bulletin at the desk.",
     action: "task:bulletin", label: "Edit bulletin", target: "desk", checks: [],
   };
   if (state.sentPrompt === null) return {
     title: "Prepare a briefing request",
-    instruction: "Rewrite the copied prompt for a general volunteer briefing. Review what it would share before you send it.",
+    instruction: "Rewrite the copied prompt. Check what you share before sending.",
     action: "task:prompt", label: "Open AI request", target: "desk", checks: [],
   };
   if (!state.planReviewed) return {
     title: "Make arrangements for the crew",
-    instruction: "Choose arrangements within three crew points, then preview who can use the plan.",
+    instruction: "Three crew points. Preview who your arrangements reach.",
     action: "task:plan", label: "Open arrangements", target: "desk", checks: [],
   };
   return {
     title: "Check in with Ada",
-    instruction: "Your first preparations are complete. Tell Ada you’re ready for the broadcast check.",
+    instruction: "Your preparations are ready for a broadcast check.",
     action: "ready", label: "Check in with Ada", target: "talk:ada", checks: [],
   };
 }

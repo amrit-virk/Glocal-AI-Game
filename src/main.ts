@@ -37,11 +37,11 @@ let documentReturn: string | null = null;
 let workTab: DeskTab = "bulletin";
 let position = { x: 49, y: 81 };
 const playerImage = sprite("#d8ae66");
-const portraits = Object.fromEntries(Object.entries(people).map(([id, person]) => [id, sprite(person.color)]));
+const portraits = Object.fromEntries(Object.entries(people).map(([id, person]) => [id, sprite(person.color, false, id as PersonId)]));
 const sceneHotspots: Record<SceneId, { label: string; action: string; x: number; y: number; person?: PersonId }[]> = {
   studio: [
     { label: "Talk to Ada", action: "talk:ada", x: 25, y: 68, person: "ada" },
-    { label: "Open the broadcast desk", action: "desk", x: 57, y: 48 },
+    { label: "Open the broadcast desk", action: "desk", x: 54.5, y: 46 },
   ],
   archive: [
     { label: "Read tonight’s booking", action: "document:booking", x: 24, y: 45 },
@@ -134,18 +134,18 @@ function collectionContent() {
 }
 function objectivePanel() {
   const goal = currentObjective(state!);
-  return `<section class="objective-panel" aria-labelledby="objective-title">
-    <div class="objective-text"><p class="overline">Current objective</p><h2 id="objective-title">${goal.title}</h2><p>${goal.instruction}</p>
-    ${goal.checks.length ? `<ul class="objective-checks">${goal.checks.map((check) => `<li class="${check.done ? "done" : ""}"><span aria-hidden="true">${check.done ? "✓" : "—"}</span> ${check.label}${check.done ? '<span class="sr-only"> complete</span>' : ""}</li>`).join("")}</ul>` : ""}
-    </div>${btn(goal.label, goal.action)}</section>`;
+  return `<section class="objective-panel" aria-label="Current objective">
+    <h2 id="objective-title">${goal.title}</h2><p>${goal.instruction}</p>
+    ${goal.checks.length ? `<ul class="objective-checks">${goal.checks.map((check) => `<li class="${check.done ? "done" : ""}"><span aria-hidden="true">${check.done ? "✓" : "○"}</span> ${check.label}${check.done ? '<span class="sr-only"> complete</span>' : ""}</li>`).join("")}</ul>` : ""}
+  </section>`;
 }
 function world() {
   const current = state!;
   const room = scenes[current.scene];
-  return `<section class="world-shell">
-    <div class="world-top"><div><span>Last Light Radio</span><span class="chapter">${current.late ? "The last call" : "The evening shift"}</span></div>
-    <div class="toolbar">${btn("Notebook · " + current.evidence.length, "notebook", true)}${btn("Station map", "map", true)}</div></div>
-    ${objectivePanel()}
+  return `<section class="world-shell" aria-label="Last Light Radio">
+    <div class="game-hud">${objectivePanel()}
+      <div class="toolbar">${btn("Notebook · " + current.evidence.length, "notebook", true)}${btn("Station map", "map", true)}${btn("Menu", "pause", true)}</div>
+    </div>
     <div class="scene atlas ${current.scene}" id="scene" role="region" aria-label="${room.name}. ${room.description}">
       <div class="scene-location"><strong>${room.name}</strong></div>
       ${current.scene === "courtyard" ? '<div class="rain" aria-hidden="true"></div>' : '<div class="lamp-glow" aria-hidden="true"></div>'}
@@ -153,47 +153,46 @@ function world() {
       <div id="player" class="player" style="left:${position.x}%;top:${position.y}%;--depth:${0.88 + (position.y - 64) * 0.009};z-index:${Math.round(position.y)}" role="img" aria-label="Your character"><img src="${playerImage}" alt=""></div>
       <div class="scene-exits">${room.exits.map((exit) => btn(scenes[exit].name + " →", "travel:" + exit, true)).join("")}</div>
     </div>
-    <div class="world-footer">${btn("Open desk", "desk", true)}<span>${current.evidence.length} ${current.evidence.length === 1 ? "document" : "documents"} in your notebook</span></div>
-    ${saveFailed ? '<p class="save-error" role="status">Your browser could not save progress. Keep this tab open to continue this run.</p>' : ""}
+    ${saveFailed ? '<p class="save-error" role="status">This browser could not save progress. Keep this tab open.</p>' : ""}
   </section>`;
 }
 function sourcePage() {
-  return `<section class="reading-page"><p class="overline">Behind the story</p><h1>Sources &amp; notes</h1><p>The station, people, notices, and event are fictional. The puzzles practise checking AI output, limiting private information, and considering who a recommendation leaves out.</p>
+  return `<section class="reading-page"><h1>Sources &amp; notes</h1><p>The station, people, notices, and event are fictional. The puzzles practise checking AI output, limiting private information, and considering who a recommendation leaves out.</p>
   ${references.map((ref) => `<article><h2>${ref.title}</h2><p>${ref.publisher} · ${ref.note}</p><a href="${ref.url}" target="_blank" rel="noopener noreferrer">Read source ↗</a></article>`).join("")}
   <p class="small">The station assistant is simulated. Prompt feedback checks patterns written for this case and may miss unusual wording. New endings and adventure progress save in this browser’s local storage.</p>
   ${btn("Back to the station", "back", true)}</section>`;
 }
 function notebookContent() {
-  return `<div class="modal-heading"><div><p class="overline">Your notebook</p><h2 id="modal-title">Messages &amp; discoveries</h2></div>${btn("Close", "close", true)}</div>
+  return `<div class="modal-heading"><div><h2 id="modal-title">Messages &amp; discoveries</h2></div>${btn("Close", "close", true)}</div>
     <div class="notebook-list">${Object.entries(documents).filter(([id]) => state!.evidence.includes(id as DocumentId)).map(([id, doc]) => `<button data-action="document:${id}"><span>${esc(doc.source)}</span><strong>${doc.title}</strong></button>`).join("") || "<p>Inspect a document to add it here.</p>"}</div>
     <h3>People you’ve spoken to</h3><p>${state!.met.map((id) => people[id].name).join(" · ") || "No one yet."}</p>`;
 }
 const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: string[] }> = {
   bulletin: {
     title: "Check the public bulletin",
-    purpose: "This is the announcement listeners will act on. Your job is to check the assistant’s time and entrance against the original messages.",
+    purpose: "Check the time and entrance against the original messages.",
     steps: [
-      "Read both source messages in the equipment room. They stay available in your notebook.",
-      "Choose the opening time and entrance in Your public bulletin. Select the source behind your decision.",
-      "Save the bulletin when you’re satisfied. Saving records your choice; it does not tell you whether it’s correct. You can revise it before broadcasting.",
+      "Read the original messages. You can reopen them in your notebook.",
+      "Choose a time, an entrance, and the source supporting your decision.",
+      "Save your choice. You can revise it before broadcasting; the ending reveals the consequences.",
     ],
   },
   prompt: {
     title: "Write a useful, private request",
-    purpose: "The copied prompt mixes private notes with useful instructions. Rewrite it before asking the station assistant for a general briefing.",
+    purpose: "Rewrite the copied prompt into a useful briefing request without private details.",
     steps: [
-      "Edit the text in Your request. Keep the practical requirements the volunteers need and remove details that identify them.",
-      "Review request gives feedback and can be used as often as you need. Reviewing does not send anything.",
-      "Send request is a story decision. The assistant returns a briefing, and any private details you send remain part of the story even after a revision.",
+      "Edit Your request. Keep practical requirements; remove identifying details.",
+      "Review request checks your draft without sending it. You can review repeatedly.",
+      "Send request commits what you share. A revision cannot undo an earlier disclosure.",
     ],
   },
   plan: {
     title: "Choose workable arrangements",
-    purpose: "Turn the volunteers’ needs into a practical plan. Your crew has three points to spend.",
+    purpose: "Spend up to three crew points on arrangements for the volunteers.",
     steps: [
-      "Select an arrangement to add it. Its cost comes out of your three-point budget. Select it again to remove it.",
-      "Preview the plan to see who your choices reach. You can change your choices and preview again.",
-      "When the first plan is ready, check in with Ada. If a new message changes the situation, preview the updated plan before going on air.",
+      "Select arrangements within the three-point budget. Select again to remove.",
+      "Preview the plan to see who it reaches. Adjust and preview as needed.",
+      "Check in with Ada when ready. If conditions change, recheck your plan before broadcasting.",
     ],
   },
 };
@@ -211,32 +210,30 @@ function openTask(tab: DeskTab) {
 }
 function taskTutorial() {
   const guide = taskGuides[workTab];
-  return `<p class="overline">At the broadcast desk</p><h2 id="modal-title">${guide.title}</h2>
+  return `<h2 id="modal-title">${guide.title}</h2>
     <p>${guide.purpose}</p><ol class="help-list">${guide.steps.map((step) => `<li>${step}</li>`).join("")}</ol>
-    <p class="small">You can reopen these instructions using How this works.</p>
     <div class="actions">${btn("Open task", "begin-task")}${btn("Back to the room", "close", true)}</div>`;
 }
 function deskContent() {
   const current = state!;
   const goal = currentObjective(current);
   const available = taskAvailable(current, workTab);
-  return `<div class="modal-heading"><div><p class="overline">Broadcast desk</p><h2 id="modal-title">${current.late ? "The final check" : "Prepare the evening bulletin"}</h2></div>${btn("Close", "close", true)}</div>
+  return `<div class="modal-heading"><div><h2 id="modal-title">${available ? taskGuides[workTab].title : "Broadcast desk"}</h2></div>${btn("Close", "close", true)}</div>
   <div class="desk-tabs" role="tablist" aria-label="Desk tasks">${([["bulletin", "The bulletin"], ["prompt", "AI request"], ["plan", "Arrangements"]] as [DeskTab, string][]).map(([tab, name]) => `<button role="tab" aria-selected="${workTab === tab}" data-locked="${!taskAvailable(current, tab)}" data-action="tab:${tab}">${name}<span class="tab-status" aria-hidden="true">${taskDone(tab) ? "Done" : taskAvailable(current, tab) ? "" : "Later"}</span></button>`).join("")}</div>
-  <div class="desk-goal"><div><strong>${available ? taskGuides[workTab].title : "Finish the current objective first"}</strong><p>${available ? taskGuides[workTab].purpose : goal.instruction}</p></div>${available ? btn("How this works", "task-help", true) : ""}</div>
+  ${available ? `<div class="task-help">${btn("How this works", "task-help", true)}</div>` : ""}
   ${notice ? `<p class="task-notice" role="status">${notice}</p>` : ""}
   <div class="desk-content">${available
     ? workTab === "bulletin" ? bulletinTab() : workTab === "prompt" ? promptTab() : planTab()
     : `<div class="task-locked"><h3>${goal.title}</h3><p>${goal.instruction}</p></div>`}</div>
-  <div class="desk-footer"><p><strong>Next · ${goal.title}</strong><br>${goal.instruction}</p>
-    ${btn(goal.label, goal.action)}</div>`;
+  <div class="desk-footer">${goal.action.startsWith("travel:") ? btn("Back to the room", "close", true) : btn(goal.label, goal.action)}</div>`;
 }
 function bulletinTab() {
   const current = state!;
   if (!investigationComplete(current)) return `<div class="task-columns"><section><h3>The assistant’s starting draft</h3><blockquote>${esc(documents.draft.body)}</blockquote></section>
-    <section class="output-paper"><h3>Check the originals first</h3><p>The draft came from two messages in the equipment room. Read them both to decide which details belong in tonight’s announcement.</p></section></div>`;
+    <section class="output-paper"><h3>Check the originals first</h3><p>The booking message and an older poster are in the equipment room. Which one applies tonight?</p></section></div>`;
   return `<div class="task-columns"><section><h3>The assistant’s starting draft</h3><blockquote>${esc(documents.draft.body)}</blockquote>
     <h3>Original sources</h3><div class="source-buttons">${current.evidence.filter((id) => id !== "roster").map((id) => btn(documents[id].title, "document:" + id, true)).join("")}</div>
-    <p class="small">Find the booking and old poster in the equipment room. Reading them adds them to your notebook.</p></section>
+</section>
     <section class="output-paper"><h3>Your public bulletin</h3>
       <label for="opening-time">Opening time</label><select id="opening-time" data-field="time"><option value="18:00" ${current.bulletin.time === "18:00" ? "selected" : ""}>Saturday, 18:00</option><option value="18:30" ${current.bulletin.time === "18:30" ? "selected" : ""}>Saturday, 18:30</option></select>
       <label for="entrance">Tell visitors to use</label><select id="entrance" data-field="entrance"><option value="front" ${current.bulletin.entrance === "front" ? "selected" : ""}>The front doors</option><option value="east" ${current.bulletin.entrance === "east" ? "selected" : ""}>The east entrance</option></select>
@@ -251,7 +248,7 @@ function promptTab() {
   const check = reviewPrompt(current.draft);
   return `<div class="task-columns"><section><h3>Copied planning prompt</h3><blockquote>${esc(promptOriginal)}</blockquote>
     <label for="prompt">Your request to the station assistant</label><textarea id="prompt" maxlength="1600" spellcheck="false">${esc(current.draft)}</textarea>
-    <p class="small">Write a general briefing. Keep the useful access and offline instructions. Only use the fictional details in this case.</p>
+
     <div class="actions">${btn("Review request", "review-prompt", true)}${btn(current.sentPrompt === null ? "Send request" : "Send a revised request", "send-prompt")}</div></section>
     <section class="output-paper" id="prompt-feedback" tabindex="-1"><h3>${promptChecked ? "Before you send" : "Assistant preview"}</h3>
       ${promptChecked ? `<h4>Information check</h4>${check.risks.length ? `<ul>${check.risks.map((risk) => `<li>${risk}</li>`).join("")}</ul>` : "<p>No known private details from this case remain.</p>"}<h4>Task check</h4>${check.missing.length ? `<ul>${check.missing.map((missing) => `<li>${missing}</li>`).join("")}</ul>` : "<p>The useful briefing requirements are present.</p>"}` : "<p>Review your request to see which information you would send and which practical instructions remain.</p>"}
@@ -273,18 +270,19 @@ function planTab() {
 function modalContent(): string {
   if (modal === "dialogue") return `<div class="speech-head"><h2 id="modal-title">${dialogue!.speaker}</h2><span>${line + 1}/${dialogue!.lines.length}</span></div>
     <button class="speech-control" data-action="next-line" aria-label="Reveal or advance dialogue" aria-describedby="dialogue-full"><span class="sr-only" id="dialogue-full">${esc(dialogue!.lines[line])}</span><span class="speech" id="speech" aria-hidden="true"></span><span class="speech-cue"><span>Click or press Enter</span><span aria-hidden="true">▾</span></span></button>`;
+  if (modal === "pause") return `<h2 id="modal-title">Last Light Radio</h2><p class="pause-status">${saveFailed ? "Saving unavailable" : "Progress saved on this device"}</p><div class="pause-actions">${btn("Resume", "close")}${btn("How to play", "help", true)}${btn("Main menu", "title", true)}${btn("Sources", "sources", true)}</div>`;
   if (modal === "tutorial") return taskTutorial();
   if (modal === "collection") return collectionContent();
   if (modal === "help") return `<h2 id="modal-title">How to play</h2>
     <p>You’re checking a radio bulletin prepared with AI. People will follow what you broadcast.</p>
-    <ol class="help-list"><li><strong>Follow the current objective.</strong> It appears above the scene and names your next task and location.</li><li><strong>Explore the station.</strong> Click named objects and people to walk over. Read both messages in the equipment room, then meet the volunteers in the courtyard.</li><li><strong>Prepare at the desk.</strong> The bulletin, AI request, and arrangements open in order. Each task has a short introduction and a How this works button.</li><li><strong>Recheck, then broadcast.</strong> Ada brings a late message. Respond to it before you go on air. The ending explains the consequences of your decisions.</li></ol>
+    <ol class="help-list"><li><strong>Follow the current objective.</strong> It stays in the corner of the game. Explore the room to find what you need.</li><li><strong>Explore the station.</strong> Click diamond markers, people, and room exits. Documents stay in your notebook.</li><li><strong>Prepare at the desk.</strong> The bulletin, AI request, and arrangements open in order. Each task has a short introduction and a How this works button.</li><li><strong>Recheck, then broadcast.</strong> Ada brings a late message. Respond to it before you go on air. The ending explains the consequences of your decisions.</li></ol>
     <p class="small">Click dialogue to reveal the line, then click again to advance. Tab and Enter also work. The game is untimed and saves your progress here.</p>${btn("Back", "close")}`;
   if (modal === "new") return `<h2 id="modal-title">Start a new shift?</h2><p>This replaces the current adventure save. Your discovered endings stay in the collection.</p><div class="actions">${btn("Start new shift", "confirm-new")}${btn("Keep current shift", "close", true)}</div>`;
   if (modal === "notebook") return notebookContent();
-  if (modal === "map") return `<div class="modal-heading"><h2 id="modal-title">The station</h2>${btn("Close", "close", true)}</div><p>Three places. Different pieces of the same story.</p><div class="map-rooms">${Object.entries(scenes).map(([id, room]) => `<button data-action="travel:${id}"><span class="map-preview atlas ${id}"></span><strong>${room.name}</strong><span>${room.description}</span></button>`).join("")}</div>`;
+  if (modal === "map") return `<div class="modal-heading"><h2 id="modal-title">The station</h2>${btn("Close", "close", true)}</div><p>Choose a room.</p><div class="map-rooms">${Object.entries(scenes).map(([id, room]) => `<button data-action="travel:${id}"><span class="map-preview atlas ${id}"></span><strong>${room.name}</strong><span>${room.description}</span></button>`).join("")}</div>`;
   if (modal === "document") {
     const doc = documents[selectedDocument!];
-    return `<div class="modal-heading"><div><p class="overline">${esc(doc.source)}</p><h2 id="modal-title">${doc.title}</h2></div>${btn("Close", "close", true)}</div><div class="document-body">${esc(doc.body)}</div><p class="notebook-note">Added to your notebook.</p>${selectedDocument === "draft" ? '<p>What source would you check before relying on this?</p>' : ""}${btn("Return", "close")}`;
+    return `<div class="modal-heading"><div><h2 id="modal-title">${doc.title}</h2><p class="document-source">${esc(doc.source)}</p></div>${btn("Close", "close", true)}</div><div class="document-body">${esc(doc.body)}</div>${selectedDocument === "draft" ? '<p>What source would you check before relying on this?</p>' : ""}${btn("Return", "close")}`;
   }
   if (modal === "desk") return deskContent();
   if (modal === "send") return `<h2 id="modal-title">Send this request?</h2><p>The assistant will receive the text below. You can revise it first.</p><blockquote>${esc(state!.draft)}</blockquote><p class="small">This is a story action. The prototype processes the request on your device.</p><div class="actions">${btn("Send to assistant", "confirm-send")}${btn("Keep editing", "cancel-send", true)}</div>`;
@@ -302,8 +300,8 @@ function report() {
     { title: "Information handling", passed: result.privacy, why: current.leaked ? "A sent request included known private details. Generalize names, contact information, and diagnoses before sending. A later revision can improve the draft, but does not retract an earlier disclosure." : current.sentUseful ? "Your request preserved useful access and offline requirements without the known private details." : "The request kept some task requirements out. Privacy also needs a useful replacement: keep the entrance, opening time, and offline instructions." },
     { title: "A plan people can use", passed: result.access, why: result.access ? "The inland pickup carries people and briefing sheets. The staffed east ramp gives Rae a usable entrance." : result.coverage.filter((person) => !person.works).map((person) => person.reason).join(" ") },
   ];
-  return `<section class="ending-scene"><div class="ending-image atlas exterior"></div><div class="ending-copy"><p class="overline">Your ending</p><h1>${ending.title}</h1><p>${ending.scene}</p><p class="ending-summary">${ending.summary}</p></div></section>
-    <section class="report-card"><div class="report-heading"><div><p class="overline">Ada’s shift report</p><h2>What your choices changed</h2></div><span class="report-score">${checks.filter((item) => item.passed).length}<small>/ 5</small></span></div>
+  return `<section class="ending-scene"><div class="ending-image atlas exterior"></div><div class="ending-copy"><h1>${ending.title}</h1><p>${ending.scene}</p><p class="ending-summary">${ending.summary}</p></div></section>
+    <section class="report-card"><div class="report-heading"><div><h2>Your shift report</h2></div><span class="report-score">${checks.filter((item) => item.passed).length}<small>/ 5</small></span></div>
     ${checks.map((item) => `<article><span class="check-mark ${item.passed ? "pass" : ""}" aria-hidden="true">${item.passed ? "✓" : "!"}</span><div><h3>${item.title} · ${item.passed ? "Handled" : "Revisit"}</h3><p>${item.why}</p></div></article>`).join("")}
     <details><summary>What changed when the message arrived?</summary><p>The bus cancellation left the opening time intact but changed travel. A shared inland pickup with paper briefings costs two points. Clearing the east ramp uses the third. A bus greeter and a video link could not replace that.</p></details>
     <p class="small">You found ${current.evidence.length} of ${Object.keys(documents).length} documents and spoke to ${current.met.length} of 3 people. Ending saved to your collection. Replaying can reveal other outcomes.</p><div class="actions">${btn("Play another shift", "new")}${btn("View ending collection", "title", true)}</div>
@@ -355,6 +353,7 @@ function walkTo(x: number, y: number, done: () => void) {
   }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 420);
 }
 function handle(action: string) {
+  if (action === "pause") { modal = "pause"; render(); return; }
   if (action === "collection") { modal = "collection"; render(); return; }
   if (action === "help") { modal = "help"; render(); return; }
   if (action === "title") { screen = "title"; modal = null; dialogue = null; render(); return; }
@@ -371,7 +370,7 @@ function handle(action: string) {
     persist();
     openDialogue({ speaker: "Ada", lines: [
       "You’re on the evening desk. The repair café needs its announcement checked before we broadcast. The station assistant prepared a draft, and people will follow the details we put on air.",
-      "First, open the broadcast desk and read that draft. Your current objective is above the scene. It will point you to the next task as you make progress.",
+      "First, open the broadcast desk and read that draft. Your objective stays in the corner. Explore the station to find what you need.",
     ] });
     return;
   }

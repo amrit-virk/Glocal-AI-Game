@@ -55,7 +55,7 @@ export const documents: Record<DocumentId, { title: string; source: string; body
 };
 
 export const people: Record<PersonId, { name: string; role: string; color: string }> = {
-  ada: { name: "Ada", role: "Station engineer", color: "#c89656" },
+  ada: { name: "Ada", role: "Station engineer", color: "#5e8490" },
   mara: { name: "Mara", role: "Repair café organizer", color: "#aa6f84" },
   ivo: { name: "Ivo", role: "Volunteer courier", color: "#65a49b" },
 };
