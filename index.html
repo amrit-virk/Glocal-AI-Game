@@ -3,19 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f4f5fb" />
-    <title>AI Arcade</title>
+    <meta name="theme-color" content="#101d29" />
+    <meta name="description" content="Last Light Radio. A short pixel-art adventure about the choices behind an AI-assisted broadcast." />
+    <title>Last Light Radio · AI Arcade</title>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#main">Skip to game</a>
     <header>
-      <a class="brand" href="#"><span class="brand-mark" aria-hidden="true">↗</span> AI Arcade</a>
-      <div class="header-tools"><nav aria-label="Main">
-        <a href="#">Home</a><a href="#sources">Sources</a>
-      </nav><div id="streak-header"></div></div>
+      <a class="brand" href="#" data-action="title"><span aria-hidden="true">◈</span> AI ARCADE</a>
+      <span id="save-status">A short story about AI</span>
+      <nav aria-label="Main">
+        <button data-action="help">Controls</button>
+        <button data-action="sources">Sources</button>
+      </nav>
     </header>
     <main id="main" tabindex="-1"></main>
-    <footer>AI Arcade <span>Fictional practice cases</span></footer>
+    <footer><span>Last Light Radio</span><span>A fictional station. Your decisions.</span></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

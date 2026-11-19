@@ -1,61 +1,48 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { games, references } from "../src/content";
-import { inspectPrompt, testPlan } from "../src/engine";
+import { newGame, assess, reviewPrompt, readSave, readLibrary, planCoverage, planCost } from "../src/engine";
+import { promptExample, promptOriginal } from "../src/content";
 
-for (const game of games) {
-  for (const puzzle of game.scenarios) {
-    test(puzzle.title, () => {
-      assert.equal(puzzle.kind, game.id);
-      for (const id of puzzle.references) assert.ok(references.some((r) => r.id === id));
-      if (puzzle.kind === "claim") {
-        assert.ok(puzzle.evidence[puzzle.decisive]);
-      } else if (puzzle.kind === "privacy") {
-        assert.equal(inspectPrompt(puzzle, puzzle.original).solved, false);
-        assert.ok(inspectPrompt(puzzle, puzzle.original).exposed.length > 0);
-        assert.equal(inspectPrompt(puzzle, puzzle.example).solved, true);
-        assert.equal(inspectPrompt(puzzle, "").missing.length, puzzle.requirements.length);
-      } else {
-        assert.equal(testPlan(puzzle, new Set(puzzle.example)).solved, true);
-        for (const [index, repair] of puzzle.repairs.entries()) {
-          assert.equal(testPlan(puzzle, new Set([index])).solved, false);
-          assert.ok(repair.helps.every((person) => puzzle.people[person]));
-        }
-        assert.equal(testPlan(puzzle, new Set()).solved, false);
-        assert.equal(testPlan(puzzle, new Set(puzzle.repairs.map((_, i) => i))).solved, false);
-      }
-    });
-  }
+function prepared() {
+  const state = newGame(promptExample);
+  state.bulletin = { time: "18:30", entrance: "east", source: "booking" };
+  state.repairs = ["shuttle", "ramp"];
+  state.sentUseful = true;
+  state.late = true;
+  return state;
 }
-
-test("different repair combinations can solve the same case", () => {
-  const puzzle = games.find((game) => game.id === "bias")!.scenarios[0];
-  assert.equal(puzzle.kind, "bias");
-  if (puzzle.kind !== "bias") return;
-  assert.equal(testPlan(puzzle, new Set([0, 1])).solved, true);
-  assert.equal(testPlan(puzzle, new Set([0, 2])).solved, true);
+test("decisions yield three distinct endings", () => {
+  const state = prepared();
+  assert.equal(assess(state).ending, "clear-signal");
+  state.leaked = true;
+  assert.equal(assess(state).ending, "last-minute-save");
+  state.bulletin.entrance = "front";
+  assert.equal(assess(state).ending, "crossed-wires");
 });
-
-test("prompt review accepts alternate wording and flags reintroduced contact details", () => {
-  const puzzle = games.find((game) => game.id === "privacy")!.scenarios[0];
-  assert.ok(puzzle.kind === "privacy");
-  const rewrite = "Invite people to tabletop games on Friday at 16:00 in Room 204.";
-  assert.equal(inspectPrompt(puzzle, rewrite).solved, true);
-  assert.deepEqual(inspectPrompt(puzzle, rewrite + " Contact x@example.test or (416) 555-0101.").exposed,
-    ["An email address", "A phone number or similar sequence"]);
+test("the late message invalidates a previously workable plan", () => {
+  const state = newGame(promptExample);
+  state.repairs = ["bus", "print", "ramp"];
+  assert.ok(planCoverage(state).every((person) => person.works));
+  state.late = true;
+  assert.equal(planCoverage(state).find((person) => person.name === "Noor")?.works, false);
+  state.repairs = ["shuttle", "ramp"];
+  assert.ok(planCoverage(state).every((person) => person.works));
+  assert.equal(planCost(state.repairs), 3);
 });
-
-test("student context can identify someone without a name", () => {
-  const puzzle = games.find((game) => game.id === "privacy")!.scenarios[2];
-  assert.ok(puzzle.kind === "privacy");
-  assert.deepEqual(inspectPrompt(puzzle, puzzle.example + " For our Year 11 robotics captain.").exposed,
-    ["A combination of details that could identify the student"]);
+test("prompt review preserves useful information without known private details", () => {
+  assert.equal(reviewPrompt(promptOriginal).safe, false);
+  assert.equal(reviewPrompt(promptOriginal).useful, true);
+  assert.deepEqual(reviewPrompt(promptExample), { risks: [], missing: [], safe: true, useful: true });
+  assert.equal(reviewPrompt("Write a briefing.").useful, false);
+  assert.equal(reviewPrompt(promptExample + " Email test@example.test").safe, false);
 });
-
-test("the transit remix invalidates the old depot plan", () => {
-  const puzzle = games.find((game) => game.id === "bias")!.scenarios[0];
-  assert.ok(puzzle.kind === "bias" && puzzle.remix);
-  assert.equal(testPlan(puzzle, new Set(puzzle.example)).solved, true);
-  assert.equal(testPlan(puzzle.remix, new Set(puzzle.example)).solved, false);
-  assert.equal(testPlan(puzzle.remix, new Set(puzzle.remix.example)).solved, true);
+test("saves round trip and invalid data is ignored", () => {
+  const state = prepared();
+  assert.deepEqual(readSave(JSON.stringify(state)), state);
+  assert.equal(readSave("{oops"), null);
+  assert.equal(readSave(JSON.stringify({ ...state, repairs: ["shuttle", "ramp", "bus"] })), null);
+  assert.equal(readSave(JSON.stringify({ ...state, scene: "unknown" })), null);
+  assert.equal(readSave(JSON.stringify({ ...state, draft: null })), null);
+  assert.equal(readSave(JSON.stringify({ ...state, published: true, ending: null })), null);
+  assert.deepEqual(readLibrary("bad"), { version: 1, endings: [], runs: 0 });
 });
