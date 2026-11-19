@@ -72,18 +72,19 @@ p:last-child { margin-bottom: 0; }
 .chapter { color: #8da6b2; font-size: .75rem; }
 .toolbar { display: flex; gap: 8px; }
 .toolbar button { min-height: 36px; padding: 5px 10px; font-size: .75rem; }
-.scene { position: relative; width: 100%; aspect-ratio: 2 / 1; overflow: hidden; cursor: crosshair; }
+.scene { container-type: inline-size; isolation: isolate; position: relative; width: 100%; aspect-ratio: 2 / 1; overflow: hidden; cursor: crosshair; }
 .scene-location { position: absolute; top: 18px; left: 18px; z-index: 2; padding: 9px 13px; background: #0b1823dc; border-left: 2px solid #d6ab6e; pointer-events: none; }
 .scene-location span { display: block; color: #a9babf; font: .6rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 3px; }
 .scene-location strong { font-size: .9rem; font-weight: 650; }
-.scene-exits { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; justify-content: center; gap: 8px; z-index: 3; }
+.scene-exits { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; justify-content: center; gap: 8px; z-index: 100; }
 .scene-exits button { background: #102230df; border-color: #748b94; font-size: .75rem; min-height: 38px; padding: 6px 12px; }
 .hotspot { position: absolute; z-index: 4; transform: translate(-50%, -80%); border: 0; padding: 0; background: transparent; box-shadow: none; color: #f2d59a; min-height: 44px; min-width: 44px; }
 .hotspot:hover { background: transparent; }
 .hotspot:active { transform: translate(-50%, -80%); box-shadow: none; }
-.hotspot.person { display: grid; justify-items: center; }
-.hotspot.person img, .player img { width: 48px; height: 66px; image-rendering: pixelated; filter: drop-shadow(1px 3px 0 #070e17a0); }
-.hotspot.person > span:not(.hotspot-label) { padding: 0 6px; background: #0a1827c9; font-size: .7rem; color: #eee3c9; border: 1px solid #627d87; }
+.hotspot.person { display: grid; justify-items: center; transform: translate(-50%, -100%); min-height: 0; }
+.hotspot.person:active { transform: translate(-50%, -100%); }
+.hotspot.person img, .player img { display: block; width: calc(10.5cqw * var(--depth, 1)); height: auto; image-rendering: pixelated; filter: drop-shadow(1px 3px 0 #070e17a0); }
+.hotspot.person > span:not(.hotspot-label) { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); padding: 0 6px; background: #0a1827c9; font-size: .7rem; color: #eee3c9; border: 1px solid #627d87; }
 .hotspot-label { position: absolute; white-space: nowrap; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #101d29; color: #f3e5c8; padding: 4px 8px; border: 1px solid #657783; font-size: .7rem; pointer-events: none; visibility: hidden; }
 .hotspot:hover .hotspot-label, .hotspot:focus-visible .hotspot-label { visibility: visible; }
 .player { position: absolute; z-index: 3; transform: translate(-50%, -100%); transition: left .42s linear, top .42s linear; pointer-events: none; }
@@ -197,7 +198,7 @@ details p { font-size: .85rem; }
   .scene-location { top: 8px; left: 8px; padding: 5px 8px; }
   .scene-location strong { font-size: .7rem; }
   .scene-location span { font-size: .5rem; }
-  .hotspot.person img, .player img { width: 32px; height: 44px; }
+  .hotspot.person img, .player img { width: calc(14cqw * var(--depth, 1)); }
   .hotspot.person > span:not(.hotspot-label) { font-size: .6rem; }
   .scene-exits { left: 6px; right: 6px; bottom: 6px; gap: 5px; }
   .scene-exits button { min-height: 36px; padding: 4px 7px; font-size: .6rem; }
@@ -262,11 +263,12 @@ body[data-screen="title"] main { width: 100%; padding: 0; }
 .world-footer button { font-size: .78rem; min-height: 36px; padding: 6px 14px; }
 .world-footer span { font-size: .7rem; color: #93a9b5; }
 .scene-location { border: 0; background: #0b1823bd; padding: 6px 10px; }
-.hotspot.object { min-width: 80px; min-height: 44px; padding: 4px; }
-.object-label { display: block; padding: 5px 8px; color: #f1ddb5; background: #142837ed; border: 1px solid #859898; font-size: .65rem; font-weight: 600; white-space: nowrap; }
-.hotspot.object:hover .object-label, .hotspot.object:focus-visible .object-label { border-color: #efc884; background: #29414c; }
-.hotspot.object .hotspot-label { display: none; }
-.objective-target .object-label { border-color: #efc884; }
+/* Small world markers; full labels appear on hover and keyboard focus. */
+.hotspot.object { min-width: 44px; min-height: 44px; padding: 6px; }
+.inspect-dot { display: grid; place-items: center; width: 28px; height: 28px; margin: auto; background: #122533e8; border: 1px solid #d5ae70; font-size: .75rem; box-shadow: 0 0 9px #e4b66f35; }
+.hotspot.object:hover .inspect-dot, .hotspot.object:focus-visible .inspect-dot { background: #29414c; border-color: #ffe1a3; }
+.objective-target .inspect-dot { outline: 1px solid #efc88488; outline-offset: 3px; }
+.player::before, .hotspot.person::before { content: ""; position: absolute; width: 65%; height: 7%; bottom: -1%; left: 18%; border-radius: 50%; background: #06101880; filter: blur(2px); z-index: -1; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 /* Dialogue */
 .speech-control { display: block; width: 100%; text-align: left; padding: 0; min-height: 120px; border: 0; background: transparent; color: #29323a; box-shadow: none; font-weight: 400; }
@@ -302,7 +304,7 @@ body[data-screen="title"] main { width: 100%; padding: 0; }
   .objective-checks { display: grid; gap: 4px; }
   .world-footer { padding: 10px; }
   .object-label { font-size: .53rem; padding: 4px 6px; }
-  .hotspot.object { min-width: 60px; }
+  .hotspot.object { min-width: 44px; }
   .desk-goal { flex-direction: column; gap: 9px; padding: 12px; }
   .desk-goal button { align-self: flex-start; }
   .tab-status { display: block; margin: 2px 0 0; font-size: .6rem; }

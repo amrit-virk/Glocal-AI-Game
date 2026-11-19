@@ -40,7 +40,7 @@ const playerImage = sprite("#d8ae66");
 const portraits = Object.fromEntries(Object.entries(people).map(([id, person]) => [id, sprite(person.color)]));
 const sceneHotspots: Record<SceneId, { label: string; action: string; x: number; y: number; person?: PersonId }[]> = {
   studio: [
-    { label: "Talk to Ada", action: "talk:ada", x: 25, y: 61, person: "ada" },
+    { label: "Talk to Ada", action: "talk:ada", x: 25, y: 68, person: "ada" },
     { label: "Open the broadcast desk", action: "desk", x: 57, y: 48 },
   ],
   archive: [
@@ -149,8 +149,8 @@ function world() {
     <div class="scene atlas ${current.scene}" id="scene" role="region" aria-label="${room.name}. ${room.description}">
       <div class="scene-location"><strong>${room.name}</strong></div>
       ${current.scene === "courtyard" ? '<div class="rain" aria-hidden="true"></div>' : '<div class="lamp-glow" aria-hidden="true"></div>'}
-      ${sceneHotspots[current.scene].map((spot) => `<button class="hotspot ${spot.person ? "person" : "object"} ${currentObjective(current).target === spot.action ? "objective-target" : ""}" data-action="${spot.action}" data-x="${spot.x}" data-y="${Math.max(65, spot.y)}" style="left:${spot.x}%;top:${spot.y}%" aria-label="${spot.label}">${spot.person ? `<img src="${portraits[spot.person]}" alt="" draggable="false"><span>${people[spot.person].name}</span>` : '<span class="object-label">' + esc(spot.label.replace(/^(Read |Inspect |Open the )/, "")) + '</span>'}<span class="hotspot-label">${spot.label}</span></button>`).join("")}
-      <div id="player" class="player" style="left:${position.x}%;top:${position.y}%" role="img" aria-label="Your character"><img src="${playerImage}" alt=""></div>
+      ${sceneHotspots[current.scene].map((spot) => `<button class="hotspot ${spot.person ? "person" : "object"} ${currentObjective(current).target === spot.action ? "objective-target" : ""}" data-action="${spot.action}" data-x="${spot.x}" data-y="${Math.max(65, spot.y)}" style="left:${spot.x}%;top:${spot.y}%;--depth:${0.88 + (spot.y - 64) * 0.009};z-index:${spot.person ? Math.round(spot.y) : 90}" aria-label="${spot.label}">${spot.person ? `<img src="${portraits[spot.person]}" alt="" draggable="false"><span>${people[spot.person].name}</span>` : '<span class="inspect-dot" aria-hidden="true">◆</span>'}<span class="hotspot-label">${spot.label}</span></button>`).join("")}
+      <div id="player" class="player" style="left:${position.x}%;top:${position.y}%;--depth:${0.88 + (position.y - 64) * 0.009};z-index:${Math.round(position.y)}" role="img" aria-label="Your character"><img src="${playerImage}" alt=""></div>
       <div class="scene-exits">${room.exits.map((exit) => btn(scenes[exit].name + " →", "travel:" + exit, true)).join("")}</div>
     </div>
     <div class="world-footer">${btn("Open desk", "desk", true)}<span>${current.evidence.length} ${current.evidence.length === 1 ? "document" : "documents"} in your notebook</span></div>
@@ -342,6 +342,8 @@ function walkTo(x: number, y: number, done: () => void) {
   position = { x, y };
   actor.style.left = x + "%";
   actor.style.top = y + "%";
+  actor.style.setProperty("--depth", String(0.88 + (y - 64) * 0.009));
+  actor.style.zIndex = String(Math.round(y));
   actor.classList.add("walking");
   const frames = actor.querySelector("img")!;
   frames.src = sprite("#d8ae66", true);

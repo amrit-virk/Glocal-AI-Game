@@ -15,7 +15,7 @@ Open the address Vite prints, normally http://localhost:5173/.
 
 ## Play
 
-Click a person or named object to walk over and interact. Click the floor to move within the clear walking area. Scene exits and the Station map connect all three locations. The interface supports Tab and Enter.
+Click a person or diamond interaction marker to walk over and interact. Click the floor to move within the clear walking area. Scene exits and the Station map connect all three locations. The interface supports Tab and Enter.
 
 Dialogue appears in a bottom text box. Click the text box to reveal the line immediately; click again to advance. Enter does the same. Reduced-motion preferences disable the typewriter and walking transitions.
 
@@ -49,7 +49,7 @@ Set `CHROMIUM_PATH` to an installed Chromium-compatible executable if Playwright
 - `src/content.ts` defines rooms, documents, conversations, arrangements, and endings.
 - `src/engine.ts` defines prompt checks, plan coverage, ending rules, and saved-state validation.
 - `src/main.ts` handles scenes, dialogue, tasks, and local saves.
-- `src/sprites.ts` draws small original character sprites.
+- `src/sprites.ts` draws original 32 × 48 character sprites. Characters scale with the scene and their floor position; interaction labels appear on hover or keyboard focus.
 - `src/style.css` handles the scene atlas, rain and walking motion, text boxes, and responsive layouts.
 - `public/art/station-atlas.png` holds four generated pixel-art environments. CSS selects the four equal panels.
 - `ART.md` records the environment-art generation prompt.
