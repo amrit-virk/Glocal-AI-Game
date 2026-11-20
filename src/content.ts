@@ -25,7 +25,7 @@ export const documents: Record<DocumentId, { title: string; source: string; body
   draft: {
     title: "AI-generated radio announcement",
     source: "AI assistant · unchecked draft",
-    body: "The harbour repair café opens this Saturday at 6 p.m. Bring a small item to mend. Enter through the front doors. All volunteers can watch the mobile briefing at 6:15.",
+    body: "The harbour repair café opens this Saturday. Opening time is 18:00. Bring a small item to mend. Enter through the front doors. All volunteers can watch the mobile briefing at 6:15.",
     clue: "The assistant was given a flyer and a booking email. It combined them without checking which details apply tonight.",
   },
   booking: {
@@ -125,3 +125,33 @@ export const references = [
   { title: "AI Risk Management Framework", publisher: "NIST", url: "https://www.nist.gov/itl/ai-risk-management-framework", note: "Checking reliability and considering the context in which AI output will be used." },
   { title: "Ethics of artificial intelligence", publisher: "UNESCO", url: "https://www.unesco.org/en/artificial-intelligence/recommendation-ethics", note: "Fairness, inclusion, and attention to people affected by a system." },
 ];
+
+export const announcementClaims = [
+  {
+    id: "day", title: "Event day", text: "The harbour repair café opens this Saturday.",
+    correction: "Change to Friday", expected: "keep",
+    evidence: { booking: "Confirmed for SATURDAY.", poster: "FRIDAY REPAIR CAFÉ · 18:00 · FRONT DOORS.", draft: "The harbour repair café opens this Saturday." },
+    why: "Saturday was already correct: tonight’s booking confirms it. Checking AI also means keeping claims the evidence supports.",
+    consequence: "Changing this to Friday sends listeners to the wrong day; withholding it leaves a confirmed date out of the announcement.",
+  },
+  {
+    id: "time", title: "Opening time", text: "Opening time is 18:00.",
+    correction: "Change to 18:30", expected: "correct",
+    evidence: { booking: "Public opening is 18:30, after the market clears the hall.", poster: "FRIDAY REPAIR CAFÉ · 18:00 · FRONT DOORS.", draft: "Opening time is 18:00." },
+    why: "Tonight’s booking says 18:30. The AI carried 18:00 over from an older event. Check whether a source applies to this occasion.",
+    consequence: "An 18:00 announcement sends visitors before the hall is ready; withholding the time leaves them without an arrival time.",
+  },
+  {
+    id: "entrance", title: "Visitor entrance", text: "Enter through the front doors.",
+    correction: "Change to the east entrance", expected: "correct",
+    evidence: { booking: "The street-side front doors lock at 18:00. Evening visitors must use the EAST ENTRANCE, which has a step-free ramp.", poster: "FRIDAY REPAIR CAFÉ · 18:00 · FRONT DOORS.", draft: "Enter through the front doors." },
+    why: "Tonight’s booking specifies the east entrance. The older flyer’s front doors will be locked. A familiar instruction can still be wrong in a new context.",
+    consequence: "Keeping the front doors sends listeners to a locked entrance; withholding the entrance leaves them without a usable route.",
+  },
+] as const;
+export type ClaimId = typeof announcementClaims[number]["id"];
+export const claimReasons = [
+  { id: "current", text: "It applies to tonight’s event." },
+  { id: "confidence", text: "The AI sounds certain." },
+  { id: "reuse", text: "Old event details still apply." },
+] as const;

@@ -1,13 +1,13 @@
 import "./style.css";
 import {
   scenes, documents, people, conversations, promptOriginal, promptExample,
-  arrangements, endings, references,
+  arrangements, endings, references, announcementClaims, claimReasons, type ClaimId,
   type SceneId, type DocumentId, type PersonId, type EndingId, type Dialogue,
 } from "./content";
 import {
   newGame, reviewPrompt, planCoverage, planCost, assess, readSave, readLibrary,
   saveKey, libraryKey, currentObjective, investigationComplete, taskAvailable,
-  readyForBroadcast, type DeskTab, type GameState,
+  readyForBroadcast, briefingCurrent, claimsComplete, updateClaimReview, briefingResponse, type ClaimReview, type DeskTab, type GameState,
 } from "./engine";
 import { sprite } from "./sprites";
 
@@ -35,6 +35,7 @@ let planChecked = false;
 let selectedDocument: DocumentId | null = null;
 let documentReturn: string | null = null;
 let workTab: DeskTab = "bulletin";
+let activeClaim: ClaimId = "day";
 let position = { x: 49, y: 81 };
 const playerImage = sprite("#d8ae66");
 const portraits = Object.fromEntries(Object.entries(people).map(([id, person]) => [id, sprite(person.color, false, id as PersonId)]));
@@ -73,6 +74,7 @@ function updateHeader() {
 function render() {
   const previousPanel = main.querySelector<HTMLElement>('[role="dialog"]');
   const previousScroll = previousPanel?.scrollTop ?? 0;
+  const previousId = (document.activeElement as HTMLElement | null)?.id;
   const previousAction = (document.activeElement as HTMLElement | null)?.dataset.action;
   const preservePosition = previousPanel?.dataset.modal === modal &&
     previousPanel?.dataset.task === workTab;
@@ -95,7 +97,7 @@ function render() {
       const panel = main.querySelector<HTMLElement>('[role="dialog"]')!;
       const previousControl = preservePosition && previousAction
         ? panel.querySelector<HTMLElement>(`[data-action="${previousAction}"]`) : null;
-      (previousControl ?? panel.querySelector<HTMLElement>("button, select, textarea"))?.focus({ preventScroll: true });
+      (previousControl ?? (preservePosition && previousId ? document.getElementById(previousId) : null) ?? panel.querySelector<HTMLElement>("button, select, textarea"))?.focus({ preventScroll: true });
       if (preservePosition) panel.scrollTop = previousScroll;
     });
   }
@@ -170,11 +172,11 @@ function notebookContent() {
 const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: string[] }> = {
   bulletin: {
     title: "Check the AI’s announcement",
-    purpose: "The AI mixed details from different events into one radio announcement. Check its time and entrance against the original messages.",
+    purpose: "The AI mixed details from different events into one radio announcement. Some claims are correct and some need changing. Check each one against the original messages.",
     steps: [
       "Read the original messages. You can reopen them in your notebook.",
-      "Choose a time, an entrance, and the source supporting your decision.",
-      "Save your choice. You can revise it before broadcasting; the ending reveals the consequences.",
+      "Select a claim. Keep it, correct it, or leave it unconfirmed. Attach a source and choose why it supports your decision.",
+      "Review all three claims, then save the announcement. Reviewed means complete, not correct. You can revise it before broadcasting.",
     ],
   },
   prompt: {
@@ -198,7 +200,7 @@ const taskGuides: Record<DeskTab, { title: string; purpose: string; steps: strin
 };
 function taskDone(tab: DeskTab) {
   if (tab === "bulletin") return state!.bulletinFiled;
-  if (tab === "prompt") return state!.sentPrompt !== null;
+  if (tab === "prompt") return briefingCurrent(state!);
   return state!.late ? state!.latePlanReviewed : state!.planReviewed;
 }
 function openTask(tab: DeskTab) {
@@ -218,6 +220,7 @@ function deskContent() {
   const current = state!;
   const goal = currentObjective(current);
   const available = taskAvailable(current, workTab);
+  const sameTask = goal.action === `task:${workTab}`;
   return `<div class="modal-heading"><div><h2 id="modal-title">${available ? taskGuides[workTab].title : "Broadcast desk"}</h2></div>${btn("Close", "close", true)}</div>
   <div class="desk-tabs" role="tablist" aria-label="Desk tasks">${([["bulletin", "The bulletin"], ["prompt", "AI request"], ["plan", "Arrangements"]] as [DeskTab, string][]).map(([tab, name]) => `<button role="tab" aria-selected="${workTab === tab}" data-locked="${!taskAvailable(current, tab)}" data-action="tab:${tab}">${name}<span class="tab-status" aria-hidden="true">${taskDone(tab) ? "Done" : taskAvailable(current, tab) ? "" : "Later"}</span></button>`).join("")}</div>
   ${available ? `<div class="task-help">${btn("How this works", "task-help", true)}</div>` : ""}
@@ -225,24 +228,39 @@ function deskContent() {
   <div class="desk-content">${available
     ? workTab === "bulletin" ? bulletinTab() : workTab === "prompt" ? promptTab() : planTab()
     : `<div class="task-locked"><h3>${goal.title}</h3><p>${goal.instruction}</p></div>`}</div>
-  <div class="desk-footer">${goal.action.startsWith("travel:") ? btn("Back to the room", "close", true) : btn(goal.label, goal.action)}</div>`;
+  ${sameTask ? "" : `<div class="desk-footer">${goal.action.startsWith("travel:") ? btn("Back to the room", "close", true) : btn(goal.label, goal.action)}</div>`}`;
 }
 function bulletinTab() {
   const current = state!;
   if (!investigationComplete(current)) return `<div class="task-columns"><section><h3>AI-generated announcement · unchecked</h3><blockquote>${esc(documents.draft.body)}</blockquote></section>
     <section class="output-paper"><h3>Check the originals first</h3><p>The AI used a booking message and an older poster. Find both in the equipment room and check which details apply tonight.</p></section></div>`;
-  return `<div class="task-columns"><section><h3>AI-generated announcement · unchecked</h3><blockquote>${esc(documents.draft.body)}</blockquote>
-    <h3>Original sources</h3><div class="source-buttons">${current.evidence.filter((id) => id !== "roster").map((id) => btn(documents[id].title, "document:" + id, true)).join("")}</div>
-</section>
-    <section class="output-paper"><h3>Your edited announcement</h3>
-      <label for="opening-time">Opening time</label><select id="opening-time" data-field="time"><option value="18:00" ${current.bulletin.time === "18:00" ? "selected" : ""}>Saturday, 18:00</option><option value="18:30" ${current.bulletin.time === "18:30" ? "selected" : ""}>Saturday, 18:30</option></select>
-      <label for="entrance">Tell visitors to use</label><select id="entrance" data-field="entrance"><option value="front" ${current.bulletin.entrance === "front" ? "selected" : ""}>The front doors</option><option value="east" ${current.bulletin.entrance === "east" ? "selected" : ""}>The east entrance</option></select>
-      <label for="source">Evidence behind your corrections</label><select id="source" data-field="source"><option value="">Choose a source</option>${current.evidence.filter((id) => ["booking", "poster", "draft"].includes(id)).map((id) => `<option value="${id}" ${current.bulletin.source === id ? "selected" : ""}>${documents[id].title}</option>`).join("")}</select>
-      <div class="bulletin-preview" id="bulletin-preview">${bulletinPreview()}</div><div class="actions">${btn(current.bulletinFiled ? "Save changes" : "Save bulletin", "save-bulletin")}</div></section></div>`;
+  const reviews = current.claimReviews!;
+  const claim = announcementClaims.find((item) => item.id === activeClaim)!;
+  const review = reviews[activeClaim];
+  const complete = (item: ClaimReview) => Boolean(item.decision && item.source && item.reason);
+  const count = announcementClaims.filter((item) => complete(reviews[item.id])).length;
+  return `<div class="claim-layout"><section class="claim-list"><h3>AI-generated announcement · unchecked</h3>
+    <p>Select a claim to review. Keep details the evidence supports.</p>
+    <div class="claim-lines" role="group" aria-label="AI claims">${announcementClaims.map((item) => `<button data-action="claim:${item.id}" aria-pressed="${item.id === activeClaim}"><span>${esc(item.text)}</span><span class="claim-state">${complete(reviews[item.id]) ? "Reviewed" : "Needs review"}</span></button>`).join("")}</div>
+    <p class="review-progress" role="status">${count} of 3 reviewed · correctness is revealed after broadcast.</p>
+    <h3>Your edited announcement</h3><div class="bulletin-preview" id="bulletin-preview">${bulletinPreview()}</div>
+    <div class="actions">${btn(current.bulletinFiled ? "Save changes" : "Save bulletin", "save-bulletin")}</div>
+    </section><section class="claim-workspace" id="claim-workspace" tabindex="-1" aria-labelledby="claim-title">
+    <h3 id="claim-title">${claim.title}</h3><p class="active-claim-text">“${esc(claim.text)}”</p>
+    <fieldset class="claim-decisions"><legend>Your decision</legend>${([["keep", "Keep as written"], ["correct", claim.correction], ["hold", "Leave unconfirmed"]] as const).map(([value, label]) => `<button data-action="claim-decision:${value}" aria-pressed="${review.decision === value}">${label}</button>`).join("")}</fieldset>
+    <fieldset class="claim-sources"><legend>Attach evidence</legend>${(["booking", "poster", "draft"] as const).map((id) => `<button data-action="claim-source:${id}" aria-pressed="${review.source === id}"><strong>${esc(documents[id].title)}</strong><span>“${esc(claim.evidence[id])}”</span></button>`).join("")}</fieldset>
+    <label for="claim-reason">Why does your evidence support your decision?</label><select id="claim-reason"><option value="">Choose your reasoning</option>${claimReasons.map((reason) => `<option value="${reason.id}" ${review.reason === reason.id ? "selected" : ""}>${reason.text}</option>`).join("")}</select>
+    <div class="claim-next">${btn(activeClaim === "entrance" ? "Review all decisions" : "Next claim", "next-claim", true)}</div>
+    </section></div>`;
 }
 function bulletinPreview() {
-  return `“The repair café opens Saturday at ${state!.bulletin.time}. Use ${state!.bulletin.entrance === "east" ? "the east entrance" : "the front doors"}.”`;
+  const bulletin = state!.bulletin;
+  const day = bulletin.day === "unconfirmed" ? "The event day is unconfirmed." : `The repair café is on ${bulletin.day}.`;
+  const time = bulletin.time === "unconfirmed" ? "Opening time is unconfirmed." : `Opening time is ${bulletin.time}.`;
+  const entrance = bulletin.entrance === "unconfirmed" ? "The visitor entrance is unconfirmed." : `Use ${bulletin.entrance === "east" ? "the east entrance" : "the front doors"}.`;
+  return `“${day} ${time} ${entrance}”`;
 }
+
 function promptTab() {
   const current = state!;
   const check = reviewPrompt(current.draft);
@@ -252,7 +270,11 @@ function promptTab() {
     <div class="actions">${btn("Review request", "review-prompt", true)}${btn(current.sentPrompt === null ? "Send request" : "Send a revised request", "send-prompt")}</div></section>
     <section class="output-paper" id="prompt-feedback" tabindex="-1"><h3>${promptChecked ? "Before you send" : "Assistant preview"}</h3>
       ${promptChecked ? `<h4>Information check</h4>${check.risks.length ? `<ul>${check.risks.map((risk) => `<li>${risk}</li>`).join("")}</ul>` : "<p>No known private details from this case remain.</p>"}<h4>Task check</h4>${check.missing.length ? `<ul>${check.missing.map((missing) => `<li>${missing}</li>`).join("")}</ul>` : "<p>The useful briefing requirements are present.</p>"}` : "<p>Review your request to see which information you would send and which practical instructions remain.</p>"}
-      ${current.sentPrompt !== null ? `<h4>The assistant returns</h4><p>${current.sentUseful ? "Volunteer briefing: confirm the opening time against the hall booking, use the east entrance, and provide a printed version. Keep the step-free route clear." : "Volunteer briefing: welcome the team, assign their roles, and share the schedule. Some practical instructions were missing from the request."}</p><p class="small">${current.leaked ? "Private details were included in a sent request. A revision improves future output but cannot undo that disclosure." : "The sent request kept this case’s known private details out."}</p>` : ""}
+      ${current.sentBriefing ? `<div class="briefing-result"><h4>Response to your sent request</h4>${!briefingCurrent(current) ? '<p class="task-notice">The announcement has changed since this response. Send a revised request before broadcasting.</p>' : ""}<ul>${current.sentBriefing.lines.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>
+      ${current.sentBriefing.gaps.length ? `<h4>What that request left out</h4><ul>${current.sentBriefing.gaps.map((gap) => `<li>${esc(gap)}</li>`).join("")}</ul>` : '<p>The response includes the practical requirements checked in this case.</p>'}
+      ${current.sentBriefing.shared.length ? `<p class="disclosure-note"><strong>Private details shared:</strong> ${current.sentBriefing.shared.map(esc).join(" · ")}</p>` : ""}
+      <p class="small">${current.leaked ? "An earlier request included private details. A revision cannot undo that disclosure." : "No known private details from this case have been sent."}</p>
+      <details><summary>View the sent request</summary><blockquote>${esc(current.sentPrompt!)}</blockquote></details></div>` : ""}
       <details><summary>Need a starting point?</summary><p>${esc(promptExample)}</p></details>
     </section></div>`;
 }
@@ -293,16 +315,40 @@ function report() {
   const current = state!;
   const result = assess(current);
   const ending = endings[current.ending!];
+  const endingScene = current.ending === "last-minute-save" && !result.evidence
+    ? "The pickup reaches the east entrance with the tools and printed sheets. The details worked, but Ada cannot trace every decision to evidence for tonight. She checks the booking before handing over to the next shift. The station needs a review it can rely on, as well as a correct announcement."
+    : ending.scene;
+  const endingSummary = current.ending === "last-minute-save" && !result.evidence
+    ? "A working launch, with gaps in the evidence behind it." : ending.summary;
+  const claimChecks = result.claims?.map((claim) => {
+    const sourceFeedback = claim.source ? "" : claim.review.source === "draft"
+      ? " The AI repeating its own claim is not independent evidence."
+      : " The old poster establishes a previous event, not tonight’s arrangements.";
+    const reasonFeedback = claim.reason ? "" : claim.review.reason === "confidence"
+      ? " Confident wording does not establish accuracy."
+      : " Reusing an event layout does not confirm its details.";
+    return {
+      title: claim.title,
+      passed: claim.passed,
+      why: claim.why + sourceFeedback + reasonFeedback + (claim.decision ? "" : " " + claim.consequence),
+      audit: `<details class="claim-audit"><summary>Your decision and evidence</summary><dl>
+        <dt>Decision</dt><dd>${claim.review.decision === "keep" ? "Keep as written" : claim.review.decision === "correct" ? claim.correction : "Leave unconfirmed"}</dd>
+        <dt>Attached source</dt><dd>${claim.review.source ? esc(documents[claim.review.source].title) : "None"}</dd>
+        <dt>Your reason</dt><dd>${esc(claimReasons.find((reason) => reason.id === claim.review.reason)?.text ?? "No reason recorded")}</dd></dl></details>`,
+    };
+  });
   const checks = [
-    { title: "Opening time", passed: result.time, why: result.time ? "Visitors hear 18:30, after the market clears the hall." : "The 18:00 announcement sends visitors before the hall is ready. Check tonight’s booking, not the reused flyer." },
-    { title: "Evening entrance", passed: result.entrance, why: result.entrance ? "Visitors use the east entrance after the front doors lock." : "The front doors lock at 18:00. The current booking gives the east entrance for evening visitors." },
-    { title: "Evidence behind the bulletin", passed: result.evidence, why: result.evidence ? "You checked the AI draft against tonight’s booking. A confident summary still needs an applicable source." : "The chosen source doesn’t establish tonight’s arrangements. Check the AI draft against a current original; its own summary is not independent evidence." },
-    { title: "Information handling", passed: result.privacy, why: current.leaked ? "A sent request included known private details. Generalize names, contact information, and diagnoses before sending. A later revision can improve the draft, but does not retract an earlier disclosure." : current.sentUseful ? "You gave the AI the practical context it needed without sharing names, contact details, or a diagnosis. Keep useful requirements when removing private information." : "The request kept some task requirements out. Privacy also needs a useful replacement: keep the entrance, opening time, and offline instructions." },
-    { title: "A plan people can use", passed: result.access, why: result.access ? "You replaced the AI’s one-size-fits-all recommendation with a pickup, paper briefings, and a staffed ramp. Check AI suggestions with the people they affect." : result.coverage.filter((person) => !person.works).map((person) => person.reason).join(" ") },
+    ...(claimChecks ?? [
+      { title: "Opening time", passed: result.time, why: result.time ? "Visitors hear 18:30, after the market clears the hall." : "The booking gives 18:30. An 18:00 announcement sends visitors before the hall is ready.", audit: "" },
+      { title: "Evening entrance", passed: result.entrance, why: result.entrance ? "Visitors use the east entrance after the front doors lock." : "The front doors lock at 18:00. Tonight’s booking specifies the east entrance.", audit: "" },
+      { title: "Evidence behind the announcement", passed: result.evidence, why: result.evidence ? "You used tonight’s booking to check the AI’s claims." : "The AI’s own summary and an older flyer do not establish tonight’s arrangements.", audit: "" },
+    ]),
+    { title: "Information handling", passed: result.privacy, why: current.leaked ? "A sent request included known private details. Removing them later does not retract that disclosure. Share access requirements without names, contacts, or a diagnosis." : !briefingCurrent(current) ? "The announcement changed after the briefing was sent. Regenerate the briefing when its source details change." : current.sentUseful ? "Your request kept useful opening, entrance, offline, and access requirements without the known private details." : "Your request omitted useful requirements. Removing private information should preserve the practical context people need.", audit: "" },
+    { title: "A plan people can use", passed: result.access, why: result.access ? "The inland pickup carries people and paper instructions, and the east ramp is clear. You checked the AI’s video recommendation against people’s circumstances." : "The AI’s video recommendation did not solve everyone’s needs. " + result.coverage.filter((person) => !person.works).map((person) => person.reason).join(" "), audit: "" },
   ];
-  return `<section class="ending-scene"><div class="ending-image atlas exterior"></div><div class="ending-copy"><h1>${ending.title}</h1><p>${ending.scene}</p><p class="ending-summary">${ending.summary}</p></div></section>
-    <section class="report-card"><div class="report-heading"><div><h2>Your shift report</h2></div><span class="report-score">${checks.filter((item) => item.passed).length}<small>/ 5</small></span></div>
-    ${checks.map((item) => `<article><span class="check-mark ${item.passed ? "pass" : ""}" aria-hidden="true">${item.passed ? "✓" : "!"}</span><div><h3>${item.title} · ${item.passed ? "Handled" : "Revisit"}</h3><p>${item.why}</p></div></article>`).join("")}
+  return `<section class="ending-scene"><div class="ending-image atlas exterior"></div><div class="ending-copy"><h1>${ending.title}</h1><p>${endingScene}</p><p class="ending-summary">${endingSummary}</p></div></section>
+    <section class="report-card"><div class="report-heading"><div><h2>Your shift report</h2></div><span class="report-score">${checks.filter((item) => item.passed).length}<small>/ ${checks.length}</small></span></div>
+    ${checks.map((item) => `<article><span class="check-mark ${item.passed ? "pass" : ""}" aria-hidden="true">${item.passed ? "✓" : "!"}</span><div><h3>${item.title} · ${item.passed ? "Handled" : "Revisit"}</h3><p>${esc(item.why)}</p>${item.audit}</div></article>`).join("")}
     <details><summary>What changed when the message arrived?</summary><p>The bus cancellation left the opening time intact but changed travel. The inland pickup with paper briefings and the cleared ramp use all three points. Recheck recommendations when conditions change; a previously workable plan can stop fitting.</p></details>
     <p class="small">You found ${current.evidence.length} of ${Object.keys(documents).length} documents and spoke to ${current.met.length} of 3 people. Ending saved to your collection. Replaying can reveal other outcomes.</p><div class="actions">${btn("Play another shift", "new")}${btn("View ending collection", "title", true)}</div>
     ${saveFailed ? '<p class="save-error">This browser could not save the ending. Keep this page open to read the report.</p>' : ""}</section>`;
@@ -439,9 +485,29 @@ function handle(action: string) {
     if (!state.tutorials.includes(workTab)) state.tutorials.push(workTab);
     modal = "desk"; persist(); render(); return;
   }
+  if (kind === "claim") {
+    if (announcementClaims.some((claim) => claim.id === id)) activeClaim = id as ClaimId;
+    notice = ""; render();
+    queueMicrotask(() => document.getElementById("claim-workspace")?.focus());
+    return;
+  }
+  if (kind === "claim-decision" || kind === "claim-source") {
+    if (!state.claimReviews || !investigationComplete(state)) return;
+    updateClaimReview(state, activeClaim, kind === "claim-decision" ? { decision: id as ClaimReview["decision"] } : { source: id as ClaimReview["source"] });
+    notice = ""; persist(); render(); return;
+  }
+  if (action === "next-claim") {
+    const index = announcementClaims.findIndex((claim) => claim.id === activeClaim);
+    if (index < announcementClaims.length - 1) handle("claim:" + announcementClaims[index + 1].id);
+    else {
+      render();
+      queueMicrotask(() => main.querySelector<HTMLElement>('[data-action="save-bulletin"]')?.focus());
+    }
+    return;
+  }
   if (action === "save-bulletin") {
-    if (!state.bulletin.source) {
-      notice = "Choose the source behind your bulletin, then save it.";
+    if (!claimsComplete(state.claimReviews)) {
+      notice = "Review all three claims. Each needs a decision, evidence, and a reason before you save.";
     } else {
       state.bulletinFiled = true;
       notice = "Bulletin saved. Follow the next objective when you’re ready.";
@@ -462,7 +528,7 @@ function handle(action: string) {
   if (action === "cancel-send") { modal = "desk"; render(); return; }
   if (action === "confirm-send") {
     const check = reviewPrompt(state.draft);
-    state.sentPrompt = state.draft; state.leaked ||= !check.safe; state.sentUseful = check.useful;
+    state.sentPrompt = state.draft; state.sentBriefing = briefingResponse(state.draft, state.bulletin); state.leaked ||= !check.safe; state.sentUseful = check.useful;
     promptChecked = true; notice = "Request sent. The response is in your AI request tab.";
     modal = "desk"; persist(); render(); return;
   }
@@ -503,9 +569,9 @@ function handle(action: string) {
     return;
   }
   if (action === "launch") {
-    if (!state.late || !state.latePlanReviewed || !state.bulletinFiled) {
+    if (!state.late || !state.latePlanReviewed || !state.bulletinFiled || !briefingCurrent(state)) {
       notice = currentObjective(state).instruction;
-      openTask(!state.bulletinFiled ? "bulletin" : "plan");
+      openTask(!state.bulletinFiled ? "bulletin" : !briefingCurrent(state) ? "prompt" : "plan");
     } else { modal = "launch"; render(); }
     return;
   }
@@ -544,14 +610,13 @@ main.addEventListener("input", (event) => {
   }
 });
 main.addEventListener("change", (event) => {
-  if (state && !state.published && event.target instanceof HTMLSelectElement) {
-    const field = event.target.dataset.field as keyof GameState["bulletin"];
-    state.bulletin[field] = event.target.value;
-    state.bulletinFiled = false;
-    persist();
-    document.getElementById("bulletin-preview")!.innerHTML = bulletinPreview();
+  if (!state || state.published || !(event.target instanceof HTMLSelectElement)) return;
+  if (event.target.id === "claim-reason" && state.claimReviews) {
+    updateClaimReview(state, activeClaim, { reason: event.target.value as ClaimReview["reason"] });
+    notice = ""; persist(); render();
   }
 });
+
 document.querySelector("header")!.addEventListener("click", (event) => {
   const action = (event.target as HTMLElement).closest<HTMLElement>("[data-action]")?.dataset.action;
   if (action) { event.preventDefault(); clearTimeout(walkTimer); busy = false; handle(action); }
